@@ -19,7 +19,6 @@ class RotateWheelNode(Node):
         self.thread_ = threading.Thread(target=self._thread_pub)
         self.thread_.start()
 
-    
     def _init_joint_states(self):
         # 初始左右轮子的速度
         self.joint_speeds = [0.0,0.0]

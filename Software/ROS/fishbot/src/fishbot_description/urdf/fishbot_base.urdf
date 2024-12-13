@@ -320,7 +320,7 @@
       </sensor>
     </gazebo>
 
-    <gazebo reference="laser_link">
+  <gazebo reference="laser_link">
       <sensor name="laser_sensor" type="ray">
       <always_on>true</always_on>
       <visualize>true</visualize>
@@ -349,7 +349,6 @@
 
       <plugin name="laserscan" filename="libgazebo_ros_ray_sensor.so">
         <ros>
-          <!-- <namespace>/tb3</namespace> -->
           <remapping>~/out:=scan</remapping>
         </ros>
         <output_type>sensor_msgs/LaserScan</output_type>
