@@ -62,7 +62,3 @@ POSE_GRAPH.constraint_builder.global_localization_min_score = 0.7
 
 return option
 
-
-
-
-
