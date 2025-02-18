@@ -1,6 +1,14 @@
 {
     "files.associations": {
         "rtthread.h": "c",
-        "rtdbg.h": "c"
+        "rtdbg.h": "c",
+        "algorithm": "cpp",
+        "iterator": "cpp",
+        "xhash": "cpp",
+        "xtree": "cpp",
+        "xutility": "cpp",
+        "xlocale": "cpp",
+        "xlocinfo": "cpp",
+        "xstring": "cpp"
     }
 }
