@@ -1,1 +1,7 @@
-[]
+[
+ {
+  "path": "/packages/peripherals/MotionDriver2RTT", 
+  "ver": "latest", 
+  "name": "MOTIONDRIVER2RTT"
+ }
+]
