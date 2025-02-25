@@ -1,4 +1,6 @@
 *.SLDPRT
 *.SLDASM
 
+*.o
+*.d
 
