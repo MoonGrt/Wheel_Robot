@@ -18,7 +18,7 @@
 #define LOG_TAG              "drv.i2c"
 #include <drv_log.h>
 
-#if !defined(BSP_USING_I2C1) && !defined(BSP_USING_I2C2) && !defined(BSP_USING_I2C3) && !defined(BSP_USING_I2C4)
+#if !defined(BSP_USING_I2C1) && !defined(BSP_USING_I2C2) && !defined(BSP_USING_I2C3) && !defined(BSP_USING_I2C4) && !defined(BSP_USING_I2C5)
 #error "Please define at least one BSP_USING_I2Cx"
 /* this driver can be disabled at menuconfig -> RT-Thread Components -> Device Drivers */
 #endif
@@ -36,6 +36,9 @@ static const struct stm32_soft_i2c_config soft_i2c_config[] =
 #endif
 #ifdef BSP_USING_I2C4
     I2C4_BUS_CONFIG,
+#endif
+#ifdef BSP_USING_I2C5
+    I2C5_BUS_CONFIG,
 #endif
 };
 
