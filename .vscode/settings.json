@@ -9,6 +9,7 @@
         "xutility": "cpp",
         "xlocale": "cpp",
         "xlocinfo": "cpp",
-        "xstring": "cpp"
+        "xstring": "cpp",
+        "utility": "cpp"
     }
 }
