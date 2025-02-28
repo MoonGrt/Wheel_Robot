@@ -31,7 +31,7 @@ double position_x = 0, position_y = 0, position_z = 0;
 
 /* Private typedef -----------------------------------------------------------*/
 /* The bus name of the mpu. */
-#define RT_MPU_DEVICE_NAME "i2c2"
+#define RT_MPU_DEVICE_NAME "i2c1"
 unsigned char *mpl_key = (unsigned char *)"eMPL 5.1";
 extern struct rt_mpu_device *mpu_dev;
 extern int mpu_dev_init_flag; /* Flag to show if the mpu device is inited. */
