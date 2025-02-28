@@ -1,0 +1,3 @@
+[submodule "Software/Firmware/FOC/packages/MotionDriver2RTT-latest"]
+	path = Software/Firmware/FOC/packages/MotionDriver2RTT-latest
+	url = https://github.com/greedyhao/MotionDriver2RTT.git
