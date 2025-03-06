@@ -1,5 +1,6 @@
 *.SLDPRT
 *.SLDASM
+*.zip
 
 *.o
 *.d
