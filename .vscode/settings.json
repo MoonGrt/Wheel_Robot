@@ -11,6 +11,7 @@
         "xlocinfo": "cpp",
         "xstring": "cpp",
         "utility": "cpp",
-        "drv_common.h": "c"
+        "drv_common.h": "c",
+        "board.h": "c"
     }
 }
