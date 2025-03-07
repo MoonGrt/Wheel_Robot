@@ -10,6 +10,5 @@
 #define RT_USING_NEWLIB
 #define _POSIX_C_SOURCE 1
 #define __RTTHREAD__
-#define _REENT_SMALL
 
 #endif /*RTCONFIG_PREINC_H__*/
