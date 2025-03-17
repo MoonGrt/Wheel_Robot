@@ -177,6 +177,20 @@ static void uart_server_thread(void * ctx) {
     }
 }
 
+static void uart_publisher_thread(void *) {
+    ascii_over_uart.respond(false, "Hello, world!");
+    for (;;) {
+        ascii_over_uart.respond(false, "%f %f",
+            (double)axes[0].encoder_.pos_estimate_.any().value_or(0.0f),
+            (double)axes[0].encoder_.vel_estimate_.any().value_or(0.0f));
+        // ascii_over_uart.respond(false, "%f %f",
+        //     (double)axes[1].encoder_.pos_estimate_.any().value_or(0.0f),
+        //     (double)axes[1].encoder_.vel_estimate_.any().value_or(0.0f));
+        uart_tx_stream.did_finish();
+        osDelay(500);
+    }
+}
+
 // TODO: allow multiple UART server instances
 void start_uart_server(UART_HandleTypeDef* huart) {
     huart_ = huart;
@@ -191,6 +205,21 @@ void start_uart_server(UART_HandleTypeDef* huart) {
     // Start UART communication thread
     osThreadDef(uart_server_thread_def, uart_server_thread, osPriorityNormal, 0, stack_size_uart_thread / sizeof(StackType_t) /* the ascii protocol needs considerable stack space */);
     uart_thread = osThreadCreate(osThread(uart_server_thread_def), NULL);
+}
+
+void start_uart_publisher(UART_HandleTypeDef* huart) {
+    huart_ = huart;
+    uart_tx_stream.huart_ = huart;
+
+    // DMA is set up to receive in a circular buffer forever.
+    // We dont use interrupts to fetch the data, instead we periodically read
+    // data out of the circular buffer into a parse buffer, controlled by a state machine
+    HAL_UART_Receive_DMA(huart_, dma_rx_buffer, sizeof(dma_rx_buffer));
+    dma_last_rcv_idx = 0;
+
+    // Start UART publish thread
+    osThreadDef(uart_publisher_thread_def, uart_publisher_thread, osPriorityNormal, 0, stack_size_uart_thread / sizeof(StackType_t) /* the ascii protocol needs considerable stack space */);
+    uart_thread = osThreadCreate(osThread(uart_publisher_thread_def), NULL);
 }
 
 void uart_poll() {

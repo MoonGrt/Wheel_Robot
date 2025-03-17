@@ -31,6 +31,23 @@
         "tuple": "cpp",
         "type_traits": "cpp",
         "typeinfo": "cpp",
-        "algorithm": "cpp"
+        "algorithm": "cpp",
+        "xstring": "cpp",
+        "xutility": "cpp",
+        "chrono": "cpp",
+        "format": "cpp",
+        "forward_list": "cpp",
+        "list": "cpp",
+        "xhash": "cpp",
+        "xtree": "cpp",
+        "charconv": "cpp",
+        "ios": "cpp",
+        "bitset": "cpp",
+        "optional": "cpp",
+        "random": "cpp",
+        "xlocnum": "cpp",
+        "xtr1common": "cpp",
+        "xlocale": "cpp",
+        "queue": "cpp"
     }
 }

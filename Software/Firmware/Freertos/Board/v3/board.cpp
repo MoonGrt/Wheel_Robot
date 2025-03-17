@@ -212,9 +212,7 @@ Stm32Gpio gpios[GPIO_COUNT] = {
     {GPIOB, GPIO_PIN_2}, // GPIO6
     {GPIOA, GPIO_PIN_15}, // GPIO7
     {GPIOB, GPIO_PIN_3}, // GPIO8
-    {GPIOD, GPIO_PIN_5}, // GPIO9
-    {GPIOD, GPIO_PIN_6}, // GPIO10
-
+    
     {GPIOB, GPIO_PIN_4}, // ENC0_A
     {GPIOB, GPIO_PIN_5}, // ENC0_B
     {GPIOC, GPIO_PIN_9}, // ENC0_Z
@@ -234,22 +232,18 @@ std::array<GpioFunction, 3> alternate_functions[GPIO_COUNT] = {
 #if HW_VERSION_MINOR >= 3
     /* GPIO1: */ {{{ODrive::GPIO_MODE_UART_A, GPIO_AF8_UART4}, {ODrive::GPIO_MODE_PWM, GPIO_AF2_TIM5}}},
     /* GPIO2: */ {{{ODrive::GPIO_MODE_UART_A, GPIO_AF8_UART4}, {ODrive::GPIO_MODE_PWM, GPIO_AF2_TIM5}}},
-    // /* GPIO3: */ {{{ODrive::GPIO_MODE_UART_B, GPIO_AF7_USART2}, {ODrive::GPIO_MODE_PWM, GPIO_AF2_TIM5}}},
-    /* GPIO3: */ {{{ODrive::GPIO_MODE_UART_B, GPIO_AF7_USART2}, {ODrive::GPIO_MODE_PWM, GPIO_AF1_TIM2}}},
+    /* GPIO3: */ {{{ODrive::GPIO_MODE_UART_B, GPIO_AF7_USART2}, {ODrive::GPIO_MODE_PWM, GPIO_AF2_TIM5}}},
 #else
     /* GPIO1: */ {{}},
     /* GPIO2: */ {{}},
     /* GPIO3: */ {{}},
 #endif
 
-    // /* GPIO4: */ {{{ODrive::GPIO_MODE_UART_B, GPIO_AF7_USART2}, {ODrive::GPIO_MODE_PWM, GPIO_AF2_TIM5}}},
-    /* GPIO4: */ {{{ODrive::GPIO_MODE_UART_B, GPIO_AF7_USART2}, {ODrive::GPIO_MODE_PWM, GPIO_AF1_TIM2}}},
+    /* GPIO4: */ {{{ODrive::GPIO_MODE_UART_B, GPIO_AF7_USART2}, {ODrive::GPIO_MODE_PWM, GPIO_AF2_TIM5}}},
     /* GPIO5: */ {{}},
     /* GPIO6: */ {{}},
-    /* GPIO7: */ {{{ODrive::GPIO_MODE_PWM, GPIO_AF1_TIM2}}},
-    /* GPIO8: */ {{{ODrive::GPIO_MODE_PWM, GPIO_AF1_TIM2}}},
-    /* GPIO9: */ {{{ODrive::GPIO_MODE_UART_B, GPIO_AF1_TIM2}}},
-    /* GPIO10: */ {{{ODrive::GPIO_MODE_UART_B, GPIO_AF1_TIM2}}},
+    /* GPIO7: */ {{}},
+    /* GPIO8: */ {{}},
     /* ENC0_A: */ {{{ODrive::GPIO_MODE_ENC0, GPIO_AF2_TIM3}}},
     /* ENC0_B: */ {{{ODrive::GPIO_MODE_ENC0, GPIO_AF2_TIM3}}},
     /* ENC0_Z: */ {{}},
@@ -308,7 +302,7 @@ bool board_init() {
     MX_SPI3_Init();
     MX_ADC3_Init();
     MX_TIM2_Init();
-    // MX_TIM5_Init();
+    MX_TIM5_Init();
     MX_TIM13_Init();
 
     // External interrupt lines are individually enabled in stm32_gpio.cpp

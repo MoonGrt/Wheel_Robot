@@ -27,7 +27,7 @@
             "executable": "${workspaceRoot}/build/ODriveFirmware.elf",
             "configFiles": [
                 "interface/stlink.cfg",
-                "target/stm32f4x.cfg",
+                "target/stm32f7x.cfg",
             ],
             "openOCDLaunchCommands": [
                 "reset_config none separate"
@@ -71,7 +71,7 @@
         },
         {
             // For the Cortex-Debug extension
-            // ssh -t odrv4 -L3333:localhost:3333 bash -c "\"openocd '-f' 'interface/stlink.cfg' '-f' 'target/stm32f4x.cfg' -c 'reset_config none separate'\""
+            // ssh -t odrv4 -L3333:localhost:3333 bash -c "\"openocd '-f' 'interface/stlink.cfg' '-f' 'target/stm32f7x.cfg' -c 'reset_config none separate'\""
             "type": "cortex-debug",
             "servertype": "external",
             "gdbTarget": "localhost:3333",
@@ -83,7 +83,7 @@
             "executable": "${workspaceRoot}/build/ODriveFirmware.elf",
             "configFiles": [
                 "interface/stlink.cfg",
-                "target/stm32f4x.cfg",
+                "target/stm32f7x.cfg",
             ],
             "svdFile": "${workspaceRoot}/Private/v4/STM32F722.svd",
             "cwd": "${workspaceRoot}"

@@ -12,6 +12,7 @@ public:
         : rx_channel_(rx_channel), sink_(*tx_channel) {}
 
     void start();
+    template<typename ... TArgs> void respond(bool include_checksum, const char * fmt, TArgs&& ... args);
 
 private:
     void cmd_set_position(char * pStr, bool use_checksum);
@@ -30,7 +31,6 @@ private:
     void cmd_unknown(char * pStr, bool use_checksum);
     void cmd_encoder(char * pStr, bool use_checksum);
 
-    template<typename ... TArgs> void respond(bool include_checksum, const char * fmt, TArgs&& ... args);
     void process_line(fibre::cbufptr_t buffer);
     void on_write_finished(fibre::WriteResult result);
     void on_read_finished(fibre::ReadResult result);

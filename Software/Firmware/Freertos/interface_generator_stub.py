@@ -4,7 +4,7 @@ import sys
 import os
 
 try:
-    path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'Firmware', 'tools', 'fibre-tools', 'interface_generator.py')
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'Freertos', 'tools', 'fibre-tools', 'interface_generator.py')
     exec(compile(open(path).read(), path, 'exec'))
 except ImportError as ex:
     print(str(ex), file=sys.stderr)
