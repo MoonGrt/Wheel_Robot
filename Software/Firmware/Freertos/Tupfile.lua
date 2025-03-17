@@ -394,7 +394,7 @@ end
 if tup.getconfig("DEBUG") == "true" then
     CFLAGS += '-gdwarf-2 -Og'
 else
-    CFLAGS += '-O2'
+    CFLAGS += '-O1'
 end
 
 if tup.getconfig("USE_LTO") == "true" then
