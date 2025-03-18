@@ -4,6 +4,7 @@ autogen/
 build/
 deploy/
 .dep/
+.tup/
 tup_build.sh
 
 #markdown preview output
