@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot
+  name="Wheel_Robot_Sim">
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="-0.00238065061006057 2.73588787687858E-09 0.0969110593365891"
+        rpy="0 0 0" />
+      <mass
+        value="0.458809382377931" />
+      <inertia
+        ixx="0.000846411676685124"
+        ixy="-1.77408502350691E-11"
+        ixz="8.64502818210288E-06"
+        iyy="0.000619972366792605"
+        iyz="1.8838609651178E-11"
+        izz="0.00133794742632469" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Wheel_Robot_Sim/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Wheel_Robot_Sim/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="laser_link">
+    <inertial>
+      <origin
+        xyz="-0.0107217166215118 1.18460811424956E-06 0.0107261325903867"
+        rpy="0 0 0" />
+      <mass
+        value="0.0865823488601551" />
+      <inertia
+        ixx="2.64898105004389E-05"
+        ixy="2.35953372237587E-09"
+        ixz="2.66456504977664E-06"
+        iyy="4.01890246867624E-05"
+        iyz="7.39951577271416E-10"
+        izz="5.75066929524224E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Wheel_Robot_Sim/meshes/laser_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.796078431372549 0.823529411764706 0.937254901960784 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Wheel_Robot_Sim/meshes/laser_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="laser_joint"
+    type="continuous">
+    <origin
+      xyz="-0.000500000000000105 0 0.124626149791491"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="laser_link" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="imu_link">
+    <inertial>
+      <origin
+        xyz="0.00166642390258558 7.06736775417629E-18 0.0010745454413099"
+        rpy="0 0 0" />
+      <mass
+        value="0.00215686283305885" />
+      <inertia
+        ixx="1.32471275852853E-07"
+        ixy="-8.85725337338877E-23"
+        ixz="-5.8335032681901E-09"
+        iyy="2.97972630345502E-07"
+        iyz="2.36210781708205E-24"
+        izz="4.27056112920458E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Wheel_Robot_Sim/meshes/imu_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.517647058823529 1 0.384313725490196 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Wheel_Robot_Sim/meshes/imu_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="imu_joint"
+    type="fixed">
+    <origin
+      xyz="-0.0100000000000001 0 0.094626149791491"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="imu_link" />
+    <axis
+      xyz="0 0 0" />
+  </joint>
+  <link
+    name="left_wheel_link">
+    <inertial>
+      <origin
+        xyz="-2.30989671834436E-11 0.00928468581982521 -1.50314066749146E-11"
+        rpy="0 0 0" />
+      <mass
+        value="0.016863123349881" />
+      <inertia
+        ixx="5.00210613971604E-06"
+        ixy="-3.45568268742638E-15"
+        ixz="7.56287498158743E-16"
+        iyy="7.63915210910664E-06"
+        iyz="-1.99682563661997E-15"
+        izz="5.00210614245866E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Wheel_Robot_Sim/meshes/left_wheel_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.2 0.2 0.2 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Wheel_Robot_Sim/meshes/left_wheel_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="left_wheel_joint"
+    type="continuous">
+    <origin
+      xyz="0 0.0655 0.0259589732744433"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="left_wheel_link" />
+    <axis
+      xyz="0 1 0" />
+  </joint>
+  <link
+    name="right_wheel_link">
+    <inertial>
+      <origin
+        xyz="2.67317626367891E-11 -0.0092846858828102 -1.4379178403523E-11"
+        rpy="0 0 0" />
+      <mass
+        value="0.0168631232190387" />
+      <inertia
+        ixx="5.00210613051693E-06"
+        ixy="-3.69005300943123E-15"
+        ixz="1.05253030042746E-15"
+        iyy="7.63915210593555E-06"
+        iyz="2.36224078811371E-15"
+        izz="5.00210612986154E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Wheel_Robot_Sim/meshes/right_wheel_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.2 0.2 0.2 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Wheel_Robot_Sim/meshes/right_wheel_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="right_wheel_joint"
+    type="continuous">
+    <origin
+      xyz="0 -0.0655 0.0259589732744432"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="right_wheel_link" />
+    <axis
+      xyz="0 -1 0" />
+  </joint>
+</robot>
