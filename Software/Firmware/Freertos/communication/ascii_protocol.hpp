@@ -44,4 +44,31 @@ private:
     fibre::BufferedStreamSink<512> sink_;
 };
 
+
+// @brief Sends a line on the specified output.
+template<typename ... TArgs>
+void AsciiProtocol::respond(bool include_checksum, const char * fmt, TArgs&& ... args) {
+    char tx_buf[64];
+
+    size_t len = snprintf(tx_buf, sizeof(tx_buf), fmt, std::forward<TArgs>(args)...);
+
+    // Silently truncate the output if it's too long for the buffer.
+    len = std::min(len, sizeof(tx_buf));
+
+    if (include_checksum) {
+        uint8_t checksum = 0;
+        for (size_t i = 0; i < len; ++i)
+            checksum ^= tx_buf[i];
+        len += snprintf(tx_buf + len, sizeof(tx_buf) - len, "*%u\r\n", checksum);
+    } else {
+        len += snprintf(tx_buf + len, sizeof(tx_buf) - len, "\r\n");
+    }
+
+    // Silently truncate the output if it's too long for the buffer.
+    len = std::min(len, sizeof(tx_buf));
+
+    sink_.write({(const uint8_t*)tx_buf, len});
+    sink_.maybe_start_async_write();
+}
+
 #endif // __ASCII_PROTOCOL_HPP

@@ -180,10 +180,9 @@ static void uart_server_thread(void * ctx) {
 static void uart_publisher_thread(void *) {
     ascii_over_uart.respond(false, "Hello, world!");
     for (;;) {
-        ascii_over_uart.respond(false, "%f %f",
+        ascii_over_uart.respond(false, "%f %f %f %f",
             (double)axes[0].encoder_.pos_estimate_.any().value_or(0.0f),
-            (double)axes[0].encoder_.vel_estimate_.any().value_or(0.0f));
-        ascii_over_uart.respond(false, "%f %f",
+            (double)axes[0].encoder_.vel_estimate_.any().value_or(0.0f),
             (double)axes[1].encoder_.pos_estimate_.any().value_or(0.0f),
             (double)axes[1].encoder_.vel_estimate_.any().value_or(0.0f));
         uart_tx_stream.did_finish();
