@@ -17,6 +17,7 @@
 #.installed.cfg
 #*.egg
 /MANIFEST
+/odrive/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
