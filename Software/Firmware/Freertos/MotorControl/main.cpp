@@ -520,7 +520,6 @@ static void rtos_main(void*) {
     // Init USB device
     MX_USB_DEVICE_Init();
 
-
     // Start ADC for temperature measurements and user measurements
     start_general_purpose_adc();
 
