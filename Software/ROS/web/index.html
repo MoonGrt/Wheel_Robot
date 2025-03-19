@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="style.css">
+  <script src="roslib.js"></script>
+</head>
+
+<body>
+  <h1>ROS Web Controller</h1>
+  <div>
+    <button onclick="move(0.2, 0)">Forward</button>
+    <button onclick="move(-0.2, 0)">Backward</button>
+  </div>
+  <div>
+    <button onclick="move(0, 0.5)">Left</button>
+    <button onclick="move(0, 0)">Stop</button>
+    <button onclick="move(0, -0.5)">Right</button>
+  </div>
+  <script src="app.js"></script>
+</body>
+
+</html>
