@@ -1,16 +1,14 @@
-import rclpy
+import rclpy, threading, math, time
 from rclpy.node import Node
 from serial import Serial
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Pose, Twist, Point, Quaternion
-import tf2_ros
 from tf2_ros import TransformBroadcaster
 from geometry_msgs.msg import TransformStamped
-import time, math
 
 class ODriveOdometryNode(Node):
-    def __init__(self):
-        super().__init__('odrive_test_node')
+    def __init__(self, port_name, baudrate):
+        super().__init__('odrive_node')
 
         # 创建发布者
         self.odom_frame_id = 'odom'
@@ -18,20 +16,40 @@ class ODriveOdometryNode(Node):
         self.odom_tf = TransformBroadcaster(self)
         self.odom_pub = self.create_publisher(Odometry, 'odom', 10)
 
-        # 设置串口通信
-        self.ser = Serial('/dev/odrive_uart', baudrate=115200, timeout=1)
-        self.get_logger().info('Serial connection established')
-        self.get_logger().info('Odometry Node Started')
-
+        #
         self.x = 0.0
         self.y = 0.0
         self.wheel_radius = 0.026  # 轮子半径 (meters)
         self.wheel_base = 0.174    # 车轮间距 (meters)
 
+        # 打开串口
+        try:
+            self.odrive = Serial(port=port_name, baudrate=baudrate, timeout=0.5)
+            self.get_logger().info("\033[32mOdrive serial connection established...\033[0m")
+            self.get_logger().info("\033[32mOdometry Node Started...\033[0m")
+        except Exception as e:
+            print(e)
+            self.get_logger().info("\033[31mSerial port opening failure\033[0m")
+            exit(0)
+
+        # 启动 Odrive 驱动线程
+        self.driver_thread = threading.Thread(target=self.driver_loop)
+        self.driver_thread.start()
+
+    def driver_loop(self):
+        # 循环读取IMU数据
+        while True:
+            # 读取加速度计数据
+            try:
+                self.read_and_publish()
+            except Exception as e:
+                self.odrive.close()
+                exit(0)
+
     def read_and_publish(self):
         # 读取串口数据
-        if self.ser.in_waiting > 0:
-            data = self.ser.readline()
+        if self.odrive.in_waiting > 0:
+            data = self.odrive.readline()
             data_str = data.decode('utf-8').strip()
             # self.get_logger().info(f'Received: {data_str}')
 
@@ -73,7 +91,6 @@ class ODriveOdometryNode(Node):
             odom_trans.transform.rotation.w = math.cos(self.theta / 2)
             odom_trans.transform.rotation.z = math.sin(self.theta / 2)
 
-
             # 创建Odometry消息
             odom_msg = Odometry()
             odom_msg.header.stamp = self.get_clock().now().to_msg()
@@ -96,17 +113,16 @@ class ODriveOdometryNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    odrive_node = ODriveOdometryNode()
+    odrive_node = ODriveOdometryNode("/dev/odrive_uart", 512000)
 
+    # 运行 ROS2 节点
     try:
-        # 主循环：不断读取串口数据并发布
-        while rclpy.ok():
-            odrive_node.read_and_publish()
-            rclpy.spin_once(odrive_node, timeout_sec=0.1)  # 在没有定时器的情况下, 仍需要调用spin_once来处理ROS 2消息队列
+        rclpy.spin(odrive_node)
     except KeyboardInterrupt:
         pass
+    # 停止 ROS2 节点
     finally:
-        odrive_node.ser.close()  # 关闭串口
+        odrive_node.destroy_node()
         rclpy.shutdown()
 
 

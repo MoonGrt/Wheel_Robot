@@ -1,10 +1,5 @@
-import time
-import math
-import serial
-import struct
+import time, math, serial, struct, threading, rclpy
 import numpy as np
-import threading
-import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Imu
 
@@ -148,13 +143,12 @@ class IMUDriverNode(Node):
 
     def driver_loop(self, port_name):
         # 打开串口
-
         try:
-            wt_imu = serial.Serial(port="/dev/imu", baudrate=9600, timeout=0.5)
-            if wt_imu.isOpen():
+            imu = serial.Serial(port=port_name, baudrate=9600, timeout=0.5)
+            if imu.isOpen():
                 self.get_logger().info("\033[32mSerial port opened successfully...\033[0m")
             else:
-                wt_imu.open()
+                imu.open()
                 self.get_logger().info("\033[32mSerial port opened successfully...\033[0m")
         except Exception as e:
             print(e)
@@ -164,16 +158,15 @@ class IMUDriverNode(Node):
         # 循环读取IMU数据
         while True:
             # 读取加速度计数据
-
             try:
-                buff_count = wt_imu.inWaiting()
+                buff_count = imu.inWaiting()
             except Exception as e:
                 print("exception:" + str(e))
                 print("imu disconnect")
                 exit(0)
             else:
                 if buff_count > 0:
-                    buff_data = wt_imu.read(buff_count)
+                    buff_data = imu.read(buff_count)
                     for i in range(0, buff_count):
                         tag = handle_serial_data(buff_data[i])
                         if tag:
@@ -242,16 +235,16 @@ class IMUDriverNode(Node):
 def main():
     # 初始化ROS 2节点
     rclpy.init()
-    node = IMUDriverNode('/dev/ttyACM0')
+    imu_node = IMUDriverNode("/dev/imu")
 
     # 运行ROS 2节点
     try:
-        rclpy.spin(node)
+        rclpy.spin(imu_node)
     except KeyboardInterrupt:
         pass
 
     # 停止ROS 2节点
-    node.destroy_node()
+    imu_node.destroy_node()
     rclpy.shutdown()
 
 
