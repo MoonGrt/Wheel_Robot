@@ -14,13 +14,13 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 def generate_launch_description():
     rviz_config_dir = os.path.join(
-            get_package_share_directory('ydlidar_ros2_driver'),
+            get_package_share_directory('ydlidar'),
             'config',
             'ydlidar.rviz')
 
 
     return LaunchDescription([
-        IncludeLaunchDescription(PythonLaunchDescriptionSource([os.path.join(get_package_share_directory('ydlidar_ros2_driver'), 'launch'),
+        IncludeLaunchDescription(PythonLaunchDescriptionSource([os.path.join(get_package_share_directory('ydlidar'), 'launch'),
 '/ydliar_launch.py'])
 ),
         Node(

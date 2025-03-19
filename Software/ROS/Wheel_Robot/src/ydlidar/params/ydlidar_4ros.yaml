@@ -1,4 +1,4 @@
-ydlidar_ros2_driver_node:
+ydlidar_node:
   ros__parameters:
     port: /dev/ydlidar
     frame_id: laser

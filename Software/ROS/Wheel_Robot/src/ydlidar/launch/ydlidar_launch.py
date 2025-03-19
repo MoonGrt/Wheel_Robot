@@ -14,12 +14,12 @@ def generate_launch_description():
 	lidar_type_arg = DeclareLaunchArgument(name='lidar_type', default_value=LIDAR_TYPE, 
                                               description='The type of lidar')
 	lidar_x3_launch = IncludeLaunchDescription(PythonLaunchDescriptionSource(
-        [os.path.join(get_package_share_directory('ydlidar_ros2_driver'), 'launch'),
+        [os.path.join(get_package_share_directory('ydlidar'), 'launch'),
         '/x3_ydlidar_launch.py']),
          condition=LaunchConfigurationEquals('lidar_type', 'x3')
     )
 	lidar_4ros_launch = IncludeLaunchDescription(PythonLaunchDescriptionSource(
-        [os.path.join(get_package_share_directory('ydlidar_ros2_driver'), 'launch'),
+        [os.path.join(get_package_share_directory('ydlidar'), 'launch'),
         '/4ros_ydlidar_launch.py']),
          condition=LaunchConfigurationEquals('lidar_type', '4ros')
     )
