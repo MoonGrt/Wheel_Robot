@@ -212,8 +212,8 @@ Stm32Gpio gpios[GPIO_COUNT] = {
     {GPIOB, GPIO_PIN_2}, // GPIO6
     {GPIOA, GPIO_PIN_15}, // GPIO7
     {GPIOB, GPIO_PIN_3}, // GPIO8
-    // {GPIOD, GPIO_PIN_5}, // GPIO9
-    // {GPIOD, GPIO_PIN_6}, // GPIO10
+    {GPIOD, GPIO_PIN_5}, // GPIO9
+    {GPIOD, GPIO_PIN_6}, // GPIO10
 
     {GPIOB, GPIO_PIN_4}, // ENC0_A
     {GPIOB, GPIO_PIN_5}, // ENC0_B
@@ -248,8 +248,8 @@ std::array<GpioFunction, 3> alternate_functions[GPIO_COUNT] = {
     /* GPIO6: */ {{}},
     /* GPIO7: */ {{{ODrive::GPIO_MODE_PWM, GPIO_AF1_TIM2}}},
     /* GPIO8: */ {{{ODrive::GPIO_MODE_PWM, GPIO_AF1_TIM2}}},
-    // /* GPIO9: */ {{{ODrive::GPIO_MODE_UART_B, GPIO_AF1_TIM2}}},
-    // /* GPIO10: */ {{{ODrive::GPIO_MODE_UART_B, GPIO_AF1_TIM2}}},
+    /* GPIO9: */ {{{ODrive::GPIO_MODE_UART_B, GPIO_AF7_USART2}}},
+    /* GPIO10: */ {{{ODrive::GPIO_MODE_UART_B, GPIO_AF7_USART2}}},
     /* ENC0_A: */ {{{ODrive::GPIO_MODE_ENC0, GPIO_AF2_TIM3}}},
     /* ENC0_B: */ {{{ODrive::GPIO_MODE_ENC0, GPIO_AF2_TIM3}}},
     /* ENC0_Z: */ {{}},

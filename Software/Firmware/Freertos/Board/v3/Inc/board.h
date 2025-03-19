@@ -33,7 +33,7 @@
 // Total count of GPIOs, including encoder pins, CAN pins and a dummy GPIO0.
 // ODrive v3.4 and earlier don't have GPIOs 6, 7 and 8 but to keep the numbering
 // consistent we just leave a gap in the counting scheme.
-#define GPIO_COUNT  (17)
+#define GPIO_COUNT  (19)
 
 #define CAN_FREQ (2000000UL)
 
@@ -50,12 +50,14 @@
     ODriveIntf::GPIO_MODE_DIGITAL, \
     ODriveIntf::GPIO_MODE_UART_A, \
     ODriveIntf::GPIO_MODE_UART_A, \
-    ODriveIntf::GPIO_MODE_ANALOG_IN, \
-    ODriveIntf::GPIO_MODE_ANALOG_IN, \
-    ODriveIntf::GPIO_MODE_ANALOG_IN, \
+    ODriveIntf::GPIO_MODE_PWM, \
+    ODriveIntf::GPIO_MODE_PWM, \
     ODriveIntf::GPIO_MODE_DIGITAL, \
     ODriveIntf::GPIO_MODE_DIGITAL, \
-    ODriveIntf::GPIO_MODE_DIGITAL, \
+    ODriveIntf::GPIO_MODE_PWM, \
+    ODriveIntf::GPIO_MODE_PWM, \
+    ODriveIntf::GPIO_MODE_UART_B, \
+    ODriveIntf::GPIO_MODE_UART_B, \
     ODriveIntf::GPIO_MODE_ENC0, \
     ODriveIntf::GPIO_MODE_ENC0, \
     ODriveIntf::GPIO_MODE_DIGITAL_PULL_DOWN, \
