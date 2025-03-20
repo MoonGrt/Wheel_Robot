@@ -82,6 +82,18 @@
         "xloctime": "cpp",
         "xmemory": "cpp",
         "xstddef": "cpp",
-        "dma.h": "c"
+        "dma.h": "c",
+        "tim.h": "c",
+        "gpio.h": "c",
+        "main.h": "c",
+        "string.h": "c",
+        "interface_usb.h": "c",
+        "usart.h": "c",
+        "can.h": "c",
+        "stdio.h": "c",
+        "stm32f722xx.h": "c",
+        "stm32f405xx.h": "c",
+        "stm32_nvm.h": "c",
+        "stdint.h": "c"
     }
 }

@@ -33,7 +33,7 @@ Stm32SpiArbiter spi3_arbiter{&hspi3};
 Stm32SpiArbiter& ext_spi_arbiter = spi3_arbiter;
 
 UART_HandleTypeDef* uart_a = &huart4;
-UART_HandleTypeDef* uart_b = &huart2; // TODO: this could be supported in ODrive v3.6 (or similar) using STM32's USART2
+UART_HandleTypeDef* uart_b = &huart2;
 UART_HandleTypeDef* uart_c = nullptr;
 
 Drv8301 m0_gate_driver{

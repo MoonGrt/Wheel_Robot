@@ -444,16 +444,16 @@ tup.frule{
     inputs=object_files,
     command='^o^ '..LINKER..' %f '..tostring(CFLAGS)..' '..tostring(LDFLAGS)..
             ' -Wl,-Map=%O.map -o %o',
-    outputs={'build/ODriveFirmware.elf', extra_outputs={'build/ODriveFirmware.map'}}
+    outputs={'build/FOC.elf', extra_outputs={'build/FOC.map'}}
 }
 -- display the size
-tup.frule{inputs={'build/ODriveFirmware.elf'}, command=CCPATH..'arm-none-eabi-size %f'}
+tup.frule{inputs={'build/FOC.elf'}, command=CCPATH..'arm-none-eabi-size %f'}
 -- create *.hex and *.bin output formats
-tup.frule{inputs={'build/ODriveFirmware.elf'}, command=CCPATH..'arm-none-eabi-objcopy -O ihex %f %o', outputs={'build/ODriveFirmware.hex'}}
-tup.frule{inputs={'build/ODriveFirmware.elf'}, command=CCPATH..'arm-none-eabi-objcopy -O binary -S %f %o', outputs={'build/ODriveFirmware.bin'}}
+tup.frule{inputs={'build/FOC.elf'}, command=CCPATH..'arm-none-eabi-objcopy -O ihex %f %o', outputs={'build/FOC.hex'}}
+tup.frule{inputs={'build/FOC.elf'}, command=CCPATH..'arm-none-eabi-objcopy -O binary -S %f %o', outputs={'build/FOC.bin'}}
 
 if tup.getconfig('ENABLE_DISASM') == 'true' then
-    tup.frule{inputs={'build/ODriveFirmware.elf'}, command=CCPATH..'arm-none-eabi-objdump %f -dSC > %o', outputs={'build/ODriveFirmware.asm'}}
+    tup.frule{inputs={'build/FOC.elf'}, command=CCPATH..'arm-none-eabi-objdump %f -dSC > %o', outputs={'build/FOC.asm'}}
 end
 
 if tup.getconfig('DOCTEST') == 'true' then

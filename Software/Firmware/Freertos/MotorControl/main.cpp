@@ -675,9 +675,9 @@ extern "C" int main(void) {
     }
 
     odrv.misconfigured_ = odrv.misconfigured_
-            || (odrv.config_.enable_uart_a && !uart_a)
-            || (odrv.config_.enable_uart_b && !uart_b)
-            || (odrv.config_.enable_uart_c && !uart_c);
+        || (odrv.config_.enable_uart_a && !uart_a)
+        || (odrv.config_.enable_uart_b && !uart_b)
+        || (odrv.config_.enable_uart_c && !uart_c);
 
     // Init board-specific peripherals
     if (!board_init()) {

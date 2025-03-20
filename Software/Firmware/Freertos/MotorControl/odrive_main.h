@@ -66,9 +66,9 @@ struct BoardConfig_t {
     };
 
     bool enable_uart_a = true;
-    bool enable_uart_b = false;
+    bool enable_uart_b = true;
     bool enable_uart_c = false;
-    uint32_t uart_a_baudrate = 512000;
+    uint32_t uart_a_baudrate = 921600;
     uint32_t uart_b_baudrate = 115200;
     uint32_t uart_c_baudrate = 115200;
     bool enable_can_a = false;  // disable CAN interface by default
@@ -78,8 +78,9 @@ struct BoardConfig_t {
     ODriveIntf::StreamProtocolType uart2_protocol = ODriveIntf::STREAM_PROTOCOL_TYPE_ASCII_AND_STDOUT;
     ODriveIntf::StreamProtocolType usb_cdc_protocol = ODriveIntf::STREAM_PROTOCOL_TYPE_ASCII_AND_STDOUT;
     float max_regen_current = 0.0f;
-    float brake_resistance = DEFAULT_BRAKE_RESISTANCE;
+    bool enable_servo_motor = true;
     bool enable_brake_resistor = false;
+    float brake_resistance = DEFAULT_BRAKE_RESISTANCE;
     float dc_bus_undervoltage_trip_level = DEFAULT_MIN_DC_VOLTAGE;      //<! [V] minimum voltage below which the motor stops operating
     float dc_bus_overvoltage_trip_level = 1.07f * HW_VERSION_VOLTAGE;   //<! [V] maximum voltage above which the motor stops operating.
                                                                         //<! This protects against cases in which the power supply fails to dissipate

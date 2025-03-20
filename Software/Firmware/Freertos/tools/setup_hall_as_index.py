@@ -8,7 +8,7 @@ print("Finding an odrive...")
 odrv = odrive.find_any()
 
 # axes = [odrv.axis0, odrv.axis1];
-axes = [odrv.axis0];
+axes = [odrv.axis0]
 
 flip_index_search_direction = False
 save_and_reboot = True

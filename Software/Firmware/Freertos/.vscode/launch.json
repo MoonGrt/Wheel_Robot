@@ -10,7 +10,7 @@
             "servertype": "openocd",
             "request": "launch",
             "name": "Debug ODrive v3.x - ST-Link",
-            "executable": "${workspaceRoot}/build/ODriveFirmware.elf",
+            "executable": "${workspaceRoot}/build/FOC.elf",
             "configFiles": [
                 "interface/stlink-v2.cfg",
                 "target/stm32f4x_stlink.cfg",
@@ -24,7 +24,7 @@
             "servertype": "openocd",
             "request": "launch",
             "name": "Debug ODrive v4.x - ST-Link",
-            "executable": "${workspaceRoot}/build/ODriveFirmware.elf",
+            "executable": "${workspaceRoot}/build/FOC.elf",
             "configFiles": [
                 "interface/stlink.cfg",
                 "target/stm32f4x.cfg",
@@ -41,7 +41,7 @@
             "servertype": "openocd",
             "request": "launch",
             "name": "Debug ODrive v3.x - ST-Link - FreeRTOS",
-            "executable": "${workspaceRoot}/build/ODriveFirmware.elf",
+            "executable": "${workspaceRoot}/build/FOC.elf",
             "rtos": "FreeRTOS",
             "configFiles": [
                 "interface/stlink-v2.cfg",
@@ -61,7 +61,7 @@
             ],
             "request": "launch",
             "name": "Debug ODrive v3.x - Remote",
-            "executable": "${workspaceRoot}/build/ODriveFirmware.elf",
+            "executable": "${workspaceRoot}/build/FOC.elf",
             "configFiles": [
                 "interface/stlink-v2.cfg",
                 "target/stm32f4x_stlink.cfg",
@@ -80,7 +80,7 @@
             ],
             "request": "launch",
             "name": "Debug ODrive v4.x - Remote",
-            "executable": "${workspaceRoot}/build/ODriveFirmware.elf",
+            "executable": "${workspaceRoot}/build/FOC.elf",
             "configFiles": [
                 "interface/stlink.cfg",
                 "target/stm32f4x.cfg",
@@ -94,7 +94,7 @@
             "servertype": "bmp",
             "request": "launch",
             "name": "Debug ODrive v3.x - Black Magic Probe",
-            "executable": "${workspaceRoot}/build/ODriveFirmware.elf",
+            "executable": "${workspaceRoot}/build/FOC.elf",
             "device": "STM32F4xx",
             "BMPGDBSerialPort": "${env:BMP_PORT}",
             "interface": "swd",

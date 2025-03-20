@@ -69,7 +69,7 @@ LDFLAGS += BUILD_TYPE
 if DEBUG then
     CFLAGS += '-O1 -g'
 else
-    CFLAGS += '-O3' -- TODO: add back -lfto
+    CFLAGS += '-O1' -- TODO: add back -lfto
 end
 
 if STRICT then

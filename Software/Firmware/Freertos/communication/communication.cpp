@@ -38,24 +38,17 @@ char serial_number_str[13]; // 12 digits + null termination
 void init_communication(void) {
     printf("================== Odrive ==================\r\n");
 
-    // Dual UART operation not supported yet
-    if (odrv.config_.enable_uart_a && odrv.config_.enable_uart_b) {
-        odrv.misconfigured_ = true;
-    }
-
-    // if (odrv.config_.enable_uart_a && uart_a) {
-    //     start_uart_server(uart_a);
-    // } else if (odrv.config_.enable_uart_b && uart_b) {
-    //     start_uart_server(uart_b);
-    // } else if (odrv.config_.enable_uart_c && uart_c) {
-    //     start_uart_server(uart_c);
+    // // Dual UART operation not supported yet
+    // if (odrv.config_.enable_uart_a && odrv.config_.enable_uart_b) {
+    //     odrv.misconfigured_ = true;
     // }
+
     if (odrv.config_.enable_uart_a && uart_a) {
+        // start_uart_server(uart_a);
         start_uart_publisher(uart_a);
-    } else if (odrv.config_.enable_uart_b && uart_b) {
-        start_uart_publisher(uart_b);
-    } else if (odrv.config_.enable_uart_c && uart_c) {
-        start_uart_publisher(uart_c);
+    }
+    if (odrv.config_.enable_uart_b && uart_b) {
+
     }
 
     start_usb_server();

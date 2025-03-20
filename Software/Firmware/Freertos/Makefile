@@ -3,8 +3,8 @@
 # Tup is used for the actual compilation.
 
 BUILD_DIR = build
-FIRMWARE = $(BUILD_DIR)/ODriveFirmware.elf
-FIRMWARE_HEX = $(BUILD_DIR)/ODriveFirmware.hex
+FIRMWARE = $(BUILD_DIR)/FOC.elf
+FIRMWARE_HEX = $(BUILD_DIR)/FOC.hex
 PROGRAMMER_CMD=$(if $(value PROGRAMMER),-c 'hla_serial $(PROGRAMMER)',)
 
 include tup.config # source build configuration to get CONFIG_BOARD_VERSION

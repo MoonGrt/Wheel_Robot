@@ -166,19 +166,28 @@ void start_adc_pwm() {
     // Warp field stabilize.
     osDelay(2);
 
-
     start_timers();
 
-
-    // Start brake resistor PWM in floating output configuration
-#if HW_VERSION_MAJOR == 3
-    htim2.Instance->CCR3 = 0;
-    htim2.Instance->CCR4 = TIM_APB1_PERIOD_CLOCKS + 1;
-    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
-    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
-#endif
+    if (odrv.config_.enable_servo_motor) {
+        // Start servo motor PWM
+        htim2.Instance->CCR1 = 0;
+        htim2.Instance->CCR2 = 0;
+        htim2.Instance->CCR3 = 0;
+        htim2.Instance->CCR4 = 0;
+        HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+        HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+        HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
+        HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
+    }
 
     if (odrv.config_.enable_brake_resistor) {
+    // Start brake resistor PWM in floating output configuration
+#if HW_VERSION_MAJOR == 3
+        htim2.Instance->CCR3 = 0;
+        htim2.Instance->CCR4 = TIM_APB1_PERIOD_CLOCKS + 1;
+        HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
+        HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
+#endif
         safety_critical_arm_brake_resistor();
     }
 }
