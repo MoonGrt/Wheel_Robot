@@ -69,7 +69,7 @@ interfaces:
             doc: |
               Current flowing back into the power supply exceeded `config.dc_max_negative_current`.
               This can happen if your brake resistor is disabled or unable to handle the braking current.
-              
+
               Check that `config.enable_brake_resistor` is `True` and that
               `(V_power_supply / Brake_resistance) > (total motor.config.current_lim + total motor.config.current_lim_margin)`.
           DC_BUS_OVER_CURRENT:
@@ -78,9 +78,6 @@ interfaces:
           BRAKE_DEADTIME_VIOLATION:
           BRAKE_DUTY_CYCLE_NAN:
           INVALID_BRAKE_RESISTANCE: {doc: '`config.brake_resistance` is non-positive or NaN. Make sure that `config.brake_resistance` is a positive number.'}
-#          BRAKE_RESISTOR_DISARMED:
-#            doc: The brake resistor was unexpectedly disarmed.
-        
       vbus_voltage:
         type: readonly float32
         unit: V
@@ -190,15 +187,15 @@ interfaces:
              or two GPIOs that are mutually exclusive in their interrupt
              capability were both used as interrupt input.
              Example: `Axis:config.step_gpio_pin` of both axes were set to the same GPIO.
-            
+
       oscilloscope: {type: Oscilloscope}
       can: {type: Can}
       test_property: uint32
       otp_valid: readonly bool
-        
+
     functions:
       test_function: {in: {delta: int32},out: {cnt: int32}}
-      get_adc_voltage: 
+      get_adc_voltage:
         in: {gpio: uint32}
         out: {voltage: float32}
         doc: Reads the ADC voltage of the specified GPIO. The GPIO should be in `GPIO_MODE_ANALOG_IN`.}
@@ -264,7 +261,7 @@ interfaces:
           Some baudrates will have a small timing error due to hardware limitations.
 
           Here's an (incomplete) list of baudrates for ODrive v3.x:
-          
+
           +-------------+---------------+-----------+
           | Configured  | Actual        | Error [%] |
           +=============+===============+===========+
@@ -326,7 +323,7 @@ interfaces:
       uart0_protocol: StreamProtocolType
       uart1_protocol: StreamProtocolType
       uart2_protocol: StreamProtocolType
-      max_regen_current: 
+      max_regen_current:
         type: float32
         unit: Amps
         doc: |
@@ -374,12 +371,12 @@ interfaces:
           If enabled, if the measured DC voltage exceeds `dc_bus_overvoltage_ramp_start`,
           the ODrive will sink more power than usual into the the brake resistor
           in an attempt to bring the voltage down again.
-          
+
           The brake duty cycle is increased by the following amount:
 
            * `ODrive:vbus_voltage` == `dc_bus_overvoltage_ramp_start`  =>  brake_duty_cycle += 0%
            * `ODrive:vbus_voltage` == `dc_bus_overvoltage_ramp_end`  =>  brake_duty_cycle += 100%
-          
+
           Remarks:
            - This feature is active even when all motors are disarmed.
            - This feature is disabled if `brake_resistance` is non-positive.
@@ -425,6 +422,70 @@ interfaces:
           baud_rate: {type: uint32, c_setter: 'set_baud_rate'}
           protocol:
             type: Protocol
+
+  ODrive.Servo:
+    c_is_class: True
+    brief: Interface for servo control functionality.
+    doc: |
+      Provides access to servo-specific control parameters and real-time status.
+      This interface allows precise position, velocity, and current control modes.
+    attributes:
+      error:
+        nullflag: NONE
+        flags:
+          POSITION_LIMIT:
+            brief: Commanded position exceeds mechanical limits.
+      target_pos:
+        type: float32
+        unit: turns
+        brief: Target position for position control mode.
+        doc: Applies only when controller.config.control_mode is POSITION_CONTROL.
+      target_vel:
+        type: float32
+        unit: turns/s
+        brief: Target velocity for velocity control mode.
+      actual_pos:
+        type: readonly float32
+        unit: turns
+        brief: Filtered position feedback from encoder.
+      actual_vel:
+        type: readonly float32
+        unit: turns/s
+        brief: Filtered velocity estimate.
+      config:
+        c_is_class: False
+        attributes:
+          pos_gain:
+            type: float32
+            unit: (A)/(turns)
+            brief: Position loop proportional gain.
+          vel_gain:
+            type: float32
+            unit: (A)/(turns/s)
+            brief: Velocity loop proportional gain.
+          vel_integrator_gain:
+            type: float32
+            unit: (A)/(turns)
+            brief: Velocity loop integrator gain.
+          pos_limit_min:
+            type: float32
+            unit: turns
+            doc: Minimum allowable position command (soft limit).
+          pos_limit_max:
+            type: float32
+            unit: turns
+            doc: Maximum allowable position command (soft limit).
+    # functions:
+    #   engage:
+    #     brief: Enable servo power stage.
+    #     doc: Must be called before sending motion commands.
+    #   disengage:
+    #     brief: Disable servo power stage immediately.
+    #   set_home:
+    #     params: [pos: float32]
+    #     doc: Sets current position as home (zero reference).
+    #   trigger_homing:
+    #     doc: Initiate automatic homing sequence based on config.homing_method.
 
   ODrive.Endpoint:
     c_is_class: False
@@ -475,19 +536,19 @@ interfaces:
             doc: There isn't a valid position estimate available.
       step_dir_active: readonly bool
       last_drv_fault: readonly uint32
-      steps: 
+      steps:
         type: readonly int64
         brief: The current commanded position, in steps, while in `step_dir` mode
-      current_state: 
+      current_state:
         type: readonly AxisState
         brief: The current state of the axis
-      requested_state: 
+      requested_state:
         type: AxisState
         brief: The user's commanded axis state
         doc: |
           This is used to command the axis to change state or perform certain routines.
           Values input here will be "consumed" and queued by the state machine handler.  Thus, reading this value back will usually show `UNDEFINED` (0).
-      is_homed: 
+      is_homed:
         type: bool
         c_name: homing_.is_homed
         brief: Whether or not the axis has been successfully homed.
@@ -621,10 +682,10 @@ interfaces:
       config:
         c_is_class: False
         attributes:
-          temp_limit_lower: 
+          temp_limit_lower:
             type: float32
             doc: The lower limit when the controller starts limiting current.
-          temp_limit_upper: 
+          temp_limit_upper:
             type: float32
             doc: The upper limit when current limit reaches 0 Amps and an over temperature error is triggered.
           enabled: {type: bool, doc: Whether this thermistor is enabled. }
@@ -643,10 +704,10 @@ interfaces:
           poly_coefficient_1: {type: float32, c_name: 'thermistor_poly_coeffs[1]'}
           poly_coefficient_2: {type: float32, c_name: 'thermistor_poly_coeffs[2]'}
           poly_coefficient_3: {type: float32, c_name: 'thermistor_poly_coeffs[3]'}
-          temp_limit_lower: 
+          temp_limit_lower:
             type: float32
             doc: The lower limit when the controller starts limiting current.
-          temp_limit_upper: 
+          temp_limit_upper:
             type: float32
             doc: The upper limit when current limit reaches 0 Amps and an over temperature error is triggered.
           enabled: {type: bool, doc: Whether this thermistor is enabled. }
@@ -786,7 +847,7 @@ interfaces:
       DC_calib_phC: {type: float32, c_name: DC_calib_.phC}
       I_bus: {type: readonly float32, unit: A, doc: The current in the ODrive DC bus.  This is also the current seen by the power supply in most systems.}
       phase_current_rev_gain: float32
-      effective_current_lim: 
+      effective_current_lim:
         type: readonly float32
         unit: A
         doc: |
@@ -815,17 +876,17 @@ interfaces:
           phase_vel: {type: readonly float32, c_getter: 'phase_vel_.value_or(0.0f)'}
           Ialpha_measured: {type: readonly float32, c_getter: 'Ialpha_beta_measured_.value_or(float2D{0.0f, 0.0f}).first'}
           Ibeta_measured: {type: readonly float32, c_getter: 'Ialpha_beta_measured_.value_or(float2D{0.0f, 0.0f}).second'}
-          Id_measured: 
+          Id_measured:
             type: readonly float32
             unit: A
             doc: |
               The phase current measured along the "d" axis in the FOC control loop.  This should be close to 0 for typical surface permanent magnet motors.
-          Iq_measured: 
+          Iq_measured:
             type: readonly float32
             unit: A
             doc: |
               The phase current measured along the "q" axis in the FOC control loop.  This is the torque-generating current, so motor torque is approx. `torque_constant * Iq_measured`
-          power: 
+          power:
             type: readonly float32
             unit: W
             doc: |
@@ -840,13 +901,13 @@ interfaces:
       config:
         c_is_class: False
         attributes:
-          pre_calibrated: 
+          pre_calibrated:
             type: bool
             c_setter: set_pre_calibrated
             doc: |
               Indicates to the ODrive that the parameters `config.phase_resistance` and `config.phase_inductance` are valid at system start.
               If these are valid and `pre_calibrated` is set to `True`, motor calibration can be skipped.
-          pole_pairs: 
+          pole_pairs:
             type: int32
             doc: |
               The number of pole pairs in the motor.
@@ -854,7 +915,7 @@ interfaces:
           calibration_current:
             type: float32
             doc: The current used to measure resistance during `AXIS_STATE_MOTOR_CALIBRATION`.
-          resistance_calib_max_voltage: 
+          resistance_calib_max_voltage:
             type: float32
             doc: |
               The maximum voltage allowed during `AXIS_STATE_MOTOR_CALIBRATION`.
@@ -863,23 +924,23 @@ interfaces:
           phase_resistance: {type: float32, unit: ohm, c_setter: set_phase_resistance}
           torque_constant: {type: float32, unit: N·m/A}
           motor_type: MotorType
-          current_lim: 
+          current_lim:
             type: float32
             unit: A
             doc: Maximum commanded current allowed
-          current_lim_margin: 
+          current_lim_margin:
             type: float32
             unit: A
             doc: Maximum measured current allowed above `current_lim`.  Any value above `current_lim + curren_lim_margin` will throw a `CURRENT_LIMIT_VIOLATION` error.
-          torque_lim: 
+          torque_lim:
             type: float32
             unit: N·m
             doc: Maximum commanded torque allowed in the torque loop.
-          inverter_temp_limit_lower: 
+          inverter_temp_limit_lower:
             type: float32
             unit: °C
             doc: Not implemented.
-          inverter_temp_limit_upper: 
+          inverter_temp_limit_upper:
             type: float32
             unit: °C
             doc: Not implemented.
@@ -889,7 +950,7 @@ interfaces:
             doc: |
               The minimum phase current range expected to be measured.  This is used to set the current shunt amplifier gains.
               This should be set > `current_lim + curren_lim_margin`, but as low as possible to maximize precision and accuracy of the controller.
-          current_control_bandwidth: 
+          current_control_bandwidth:
             type: float32
             c_setter: set_current_control_bandwidth
             unit: rad/s
@@ -901,10 +962,10 @@ interfaces:
           acim_autoflux_enable: bool
           acim_autoflux_attack_gain: float32
           acim_autoflux_decay_gain: float32
-          R_wL_FF_enable: 
+          R_wL_FF_enable:
             type: bool
             doc: Enables automatic feedforward of the R*wL term in the current controller.
-          bEMF_FF_enable: 
+          bEMF_FF_enable:
             type: bool
             doc: Enables automatic feedforward of the bEMF term in the current controller.
           I_bus_hard_min:
@@ -942,7 +1003,7 @@ interfaces:
       size: readonly uint32
     functions:
       get_val: {in: {index: uint32}, out: {val: float32}}
-  
+
   ODrive.AcimEstimator:
     c_is_class: True
     attributes:
@@ -974,13 +1035,13 @@ interfaces:
   ODrive.Controller:
     c_is_class: True
     attributes:
-      error: 
+      error:
         nullflag: NONE
         flags:
           OVERSPEED:
             brief: Motor speed exceeded `config.vel_limit * config.vel_limit_tolerance` and `config.enable_overspeed_error` was enabled.
             doc: |
-              Try increasing `config.vel_limit`. The default of 2 turns per second 
+              Try increasing `config.vel_limit`. The default of 2 turns per second
               gives a motor speed of only 120 RPM. Note: Even if
               you do not command your motor to exceed `config.vel_limit`,
               sudden changes in the load placed on a motor may cause this speed
@@ -1045,19 +1106,19 @@ interfaces:
         type: readonly float32
         unit: turn/s
         doc: The velocity reference actually being used by the velocity controller.  This is the same as `input_vel` in `INPUT_MODE_PASSTHROUGH`, but may vary according to `InputMode`.
-      torque_setpoint: 
+      torque_setpoint:
         type: readonly float32
         unit: N·m
         doc: The torque reference actually being used by the torque controller.  This is the same as `input_vel` in `INPUT_MODE_PASSTHROUGH`, but may vary according to `InputMode`.
-      trajectory_done: 
+      trajectory_done:
         type: readonly bool
         doc: Indicates the last commanded Trapezoidal Trajectory movement is complete.
-      vel_integrator_torque: 
+      vel_integrator_torque:
         type: float32
         unit: N·m
         doc: The accumulated value of the velocity loop integrator
       anticogging_valid: bool
-      autotuning_phase: 
+      autotuning_phase:
         type: float32
         unit: rad
         doc: The current phase angle of the `INPUT_MODE_TUNING` sine wave generator
@@ -1069,12 +1130,12 @@ interfaces:
           enable_torque_mode_vel_limit:
             type: bool
             doc: Enable velocity limit in torque control mode (requires a valid velocity estimator).
-          enable_gain_scheduling: 
+          enable_gain_scheduling:
             type: bool
             doc: |
               Enable the experimental "gain scheduling" module, which reduces the `pos_gain`, `vel_gain`, and `vel_integrator_gain` according to the position error.
               Also known as "anti-hunt"
-          enable_overspeed_error: 
+          enable_overspeed_error:
             type: bool
             doc: Enables the velocity controller's overspeed error
           control_mode: {type: ControlMode, c_setter: set_control_mode}
@@ -1102,7 +1163,7 @@ interfaces:
           vel_limit_tolerance:
             type: float32
             doc: Ratio to `vel_limit`. Infinity to disable.
-          vel_ramp_rate: 
+          vel_ramp_rate:
             type: float32
             unit: turn/s^2
           torque_ramp_rate:
@@ -1124,13 +1185,13 @@ interfaces:
           inertia:
             type: float32
             unit: N·m/(turn/s^2)
-          axis_to_mirror: 
+          axis_to_mirror:
             type: uint8
             doc: The axis used for mirroring when in `INPUT_MODE_MIRROR`
-          mirror_ratio: 
+          mirror_ratio:
             type: float32
             doc: The ratio applied to position and velocity movements of the mirrored axis.  To reverse movements, use a negative value
-          torque_mirror_ratio: 
+          torque_mirror_ratio:
             type: float32
             doc: The ratio applied to torque values of the mirrored axis.
           load_encoder_axis:
@@ -1213,7 +1274,7 @@ interfaces:
               [your encoder](https://docs.odriverobotics.com/encoders). The
               ODrive uses your supplied value for the motor pole pairs to
               measure the CPR. So you should also double check this value.
-              
+
               If you are still having issues, you can try to increase
               `config.calib_scan_distance` up to a factor of 4 above the default.
 
@@ -1248,17 +1309,17 @@ interfaces:
           HALL_NOT_CALIBRATED_YET:
       is_ready: readonly bool
       index_found: readonly bool
-      shadow_count: 
+      shadow_count:
         type: readonly int32
         unit: counts
         doc: Raw linear count from the encoder.
-      count_in_cpr: 
+      count_in_cpr:
         type: readonly int32
         unit: counts
         doc: Raw circular count from the encoder on [0, cpr)
       interpolation: readonly float32
       phase: {type: readonly float32, c_getter: phase_.any().value_or(0.0f)}
-      pos_estimate: 
+      pos_estimate:
         type: readonly float32
         c_getter: pos_estimate_.any().value_or(0.0f)
         unit: turns
@@ -1267,7 +1328,7 @@ interfaces:
         type: readonly float32
         unit: counts
         doc: Linear position estimate of the encoder, in counts.  Equal to `pos_estimate * config.cpr`
-      pos_circular: 
+      pos_circular:
         type: readonly float32
         c_getter: pos_circular_.any().value_or(0.0f)
         unit: turns
@@ -1276,17 +1337,17 @@ interfaces:
         type: readonly float32
         unit: counts
         doc: Circular position estimate of the encoder, on the space [0, cpr).
-      delta_pos_cpr_counts: 
+      delta_pos_cpr_counts:
         type: readonly float32
         unit: counts
         doc: Circular position delta of the encoder in the most recent loop. Primarily for debug purposes, it indicates much the encoder changed since the last time it was checked.
       hall_state: readonly uint8
-      vel_estimate: 
+      vel_estimate:
         type: readonly float32
         c_getter: vel_estimate_.any().value_or(0.0f)
         unit: turn/s
         doc: Estimate of the linear velocity of an axis in turn/s
-      vel_estimate_counts: 
+      vel_estimate_counts:
         type: readonly float32
         unit: counts/sec
         doc: Estimate of the linear velocity of an axis, in counts/s.
@@ -1299,24 +1360,24 @@ interfaces:
         c_is_class: False
         attributes:
           mode: Mode
-          use_index: 
+          use_index:
             type: bool
             c_setter: set_use_index
             doc: Set this to `True` when using an encoder with an index pin to allow pre-calibration of the encoder and encoder index search.
           index_offset:
             type: float32
             doc: When the index is found, the linear position of the axis will be set to this value if `use_index_offset` is set to `True`.
-          use_index_offset: 
+          use_index_offset:
             type: bool
             doc: Set this to `True` to have the axis set the linear position of the axis to `index_offset` when the index is found during encoder index search
-          find_idx_on_lockin_only: 
+          find_idx_on_lockin_only:
             type: bool
             c_setter: set_find_idx_on_lockin_only
-          abs_spi_cs_gpio_pin: 
+          abs_spi_cs_gpio_pin:
             type: uint16
             c_setter: set_abs_spi_cs_gpio_pin
             doc: Make sure that the GPIO is in `GPIO_MODE_DIGITAL`.
-          cpr: 
+          cpr:
             type: int32
             doc: Counts per Revolution of the encoder.  This is 4x the Pulses per Revolution.
           phase_offset: int32
@@ -1324,29 +1385,29 @@ interfaces:
           direction: int32
           pre_calibrated: {type: bool, c_setter: set_pre_calibrated}
           enable_phase_interpolation: bool
-          bandwidth: 
+          bandwidth:
             type: float32
             c_setter: set_bandwidth
             unit: rad/s
-          calib_range: 
+          calib_range:
             type: float32
             unit: turn
             doc: The error threshold for encoder offset calibration, in turns.  If the
-          calib_scan_distance: 
+          calib_scan_distance:
             type: float32
             unit: rad (electrical)
             doc: |
               The distance the motor is turned during encoder offset calibration.
               This is in the electrical frame, so if you want a 7pp motor to turn 1 mechanical revolution, you would put `(7 * 2*pi)`
             default: 16pi rad
-          calib_scan_omega: 
+          calib_scan_omega:
             type: float32
             unit: rad/s (electrical)
             doc: |
               The speed the motor turns during encoder offset calibration.
               This is in the electrical frame, so a 7pp motor rotating 1 mechanical revolution in 2 sec would be set to `(7 * 2*pi) / 2`
             default: 4pi rad/s
-          ignore_illegal_hall_state: 
+          ignore_illegal_hall_state:
             type: bool
             doc: Ignore the error "Illegal Hall State"
           hall_polarity: uint8
@@ -1360,7 +1421,7 @@ interfaces:
     functions:
       set_linear_count:
         in:
-          count: 
+          count:
             type: int32
             unit: counts
         doc: Set the current linear position of the axis, in counts
@@ -1516,7 +1577,7 @@ valuetypes:
       AsciiAndStdout: {doc: Combination of `Ascii` and `Stdout`.}
 
   ODrive.Can.Protocol:
-    flags: 
+    flags:
       SIMPLE:
         doc: CANSimple, an ODrive-specific protocol for basic functionality
 
@@ -1738,4 +1799,4 @@ valuetypes:
           Used for high-phase-resistance motors (> 1 ohm), which are typically sold as "Gimbal" motors.
       ACIM:
         doc: |
-          Used for FOC control of AC Induction Motors (ACIM), aka Asynchronous motors, 
+          Used for FOC control of AC Induction Motors (ACIM), aka Asynchronous motors,

@@ -94,6 +94,11 @@
         "stm32f722xx.h": "c",
         "stm32f405xx.h": "c",
         "stm32_nvm.h": "c",
-        "stdint.h": "c"
+        "stdint.h": "c",
+        "task.h": "c",
+        "cmsis_os.h": "c",
+        "usbd_cdc_if.h": "c",
+        "usbd_desc.h": "c",
+        "stm32f4xx_hal.h": "c"
     }
 }

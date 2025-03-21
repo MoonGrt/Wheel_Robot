@@ -94,6 +94,10 @@ ODRIVE_ERROR_INVALID_BRAKE_RESISTANCE    = 0x00000080
 CAN_ERROR_NONE                           = 0x00000000
 CAN_ERROR_DUPLICATE_CAN_IDS              = 0x00000001
 
+# ODrive.Servo.Error
+SERVO_ERROR_NONE                         = 0x00000000
+SERVO_ERROR_POSITION_LIMIT               = 0x00000001
+
 # ODrive.Axis.Error
 AXIS_ERROR_NONE                          = 0x00000000
 AXIS_ERROR_INVALID_STATE                 = 0x00000001
@@ -246,6 +250,9 @@ class ODriveError(enum.IntFlag):
 class CanError(enum.IntFlag):
     NONE                                     = 0x00000000
     DUPLICATE_CAN_IDS                        = 0x00000001
+class ServoError(enum.IntFlag):
+    NONE                                     = 0x00000000
+    POSITION_LIMIT                           = 0x00000001
 class AxisError(enum.IntFlag):
     NONE                                     = 0x00000000
     INVALID_STATE                            = 0x00000001
