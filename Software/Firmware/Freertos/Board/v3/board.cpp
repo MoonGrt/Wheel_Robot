@@ -165,19 +165,19 @@ std::array<Servo, SERVOS_COUNT> servos{{
     {
         1, // axis_num
         &htim2, // timer
-        TIM_CHANNEL_1, // channel
+        TIM_CHANNEL_2, // channel
         {Servo1_GPIO_Port, Servo1_Pin} // gpio
     },
     {
         2, // axis_num
         &htim2, // timer
-        TIM_CHANNEL_1, // channel
+        TIM_CHANNEL_3, // channel
         {Servo2_GPIO_Port, Servo2_Pin} // gpio
     },
     {   
         3, // axis_num
         &htim2, // timer
-        TIM_CHANNEL_1, // channel
+        TIM_CHANNEL_4, // channel
         {Servo3_GPIO_Port, Servo3_Pin} // gpio
     }
 }};

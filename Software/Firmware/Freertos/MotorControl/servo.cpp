@@ -12,9 +12,8 @@ bool Servo::set_angle(float angle) {
     if (angle < config_.servo_angle_min) angle = config_.servo_angle_min;
     if (angle > config_.servo_angle_max) angle = config_.servo_angle_max;
 
-    // TIM_HandleTypeDef* htim = timer_;
-    // TIM_TypeDef* tim = htim->Instance;
-
+    angle_ = angle;
+    
     // 计算占空比，对应脉宽范围：500us - 2500us
     uint16_t pulse = PWM_MIN_PULSE + (angle * (PWM_MAX_PULSE - PWM_MIN_PULSE) / (config_.servo_angle_max - config_.servo_angle_min));
 
@@ -27,4 +26,3 @@ bool Servo::set_angle(float angle) {
 
     return true;
 }
-
