@@ -186,7 +186,7 @@ static void uart_publisher_thread(void *) {
             (double)axes[1].encoder_.pos_estimate_.any().value_or(0.0f),
             (double)axes[1].encoder_.vel_estimate_.any().value_or(0.0f));
         uart_tx_stream.did_finish();
-        osDelay(200);
+        osDelay(100);
     }
 }
 

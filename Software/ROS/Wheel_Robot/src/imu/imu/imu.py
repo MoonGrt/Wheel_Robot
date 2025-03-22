@@ -125,7 +125,7 @@ def get_quaternion_from_euler(roll, pitch, yaw):
 
 
 class IMUDriverNode(Node):
-    def __init__(self, port_name):
+    def __init__(self, port_name, baudrate):
         super().__init__('imu_driver_node')
 
         # 初始化IMU消息
@@ -134,17 +134,15 @@ class IMUDriverNode(Node):
 
         # 创建IMU数据发布器
         self.imu_pub = self.create_publisher(Imu, 'imu', 10)
-        #self.port = self.get_parameter('port')
-        #self.baud_rate = self.get_parameter('baud')
 
         # 启动IMU驱动线程
-        self.driver_thread = threading.Thread(target=self.driver_loop, args=(port_name,))
+        self.driver_thread = threading.Thread(target=self.driver_loop, args=(port_name, baudrate, ))
         self.driver_thread.start()
 
-    def driver_loop(self, port_name):
+    def driver_loop(self, port_name, baudrate):
         # 打开串口
         try:
-            imu = serial.Serial(port=port_name, baudrate=9600, timeout=0.5)
+            imu = serial.Serial(port=port_name, baudrate=baudrate, timeout=0.5)
             if imu.isOpen():
                 self.get_logger().info("\033[32mSerial port opened successfully...\033[0m")
             else:
@@ -235,7 +233,7 @@ class IMUDriverNode(Node):
 def main():
     # 初始化ROS 2节点
     rclpy.init()
-    imu_node = IMUDriverNode("/dev/imu")
+    imu_node = IMUDriverNode("/dev/imu", 921600)
 
     # 运行ROS 2节点
     try:

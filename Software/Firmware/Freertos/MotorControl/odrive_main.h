@@ -68,7 +68,7 @@ struct BoardConfig_t {
     bool enable_uart_a = true;
     bool enable_uart_b = true;
     bool enable_uart_c = false;
-    uint32_t uart_a_baudrate = 115200;  // 912600
+    uint32_t uart_a_baudrate = 921600;  // 921600
     uint32_t uart_b_baudrate = 115200;
     uint32_t uart_c_baudrate = 115200;
     bool enable_can_a = false;  // disable CAN interface by default
