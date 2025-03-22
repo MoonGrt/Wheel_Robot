@@ -38,14 +38,9 @@ char serial_number_str[13]; // 12 digits + null termination
 void init_communication(void) {
     printf("================== Odrive ==================\r\n");
 
-    // // Dual UART operation not supported yet
-    // if (odrv.config_.enable_uart_a && odrv.config_.enable_uart_b) {
-    //     odrv.misconfigured_ = true;
-    // }
-
     if (odrv.config_.enable_uart_a && uart_a) {
-        // start_uart_server(uart_a);
-        start_uart_publisher(uart_a);
+        start_uart_server(uart_a);
+        // start_uart_publisher(uart_a);
     }
     if (odrv.config_.enable_uart_b && uart_b) {
 

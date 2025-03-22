@@ -155,6 +155,15 @@
 #define M1_ENC_B_Pin GPIO_PIN_7
 #define M1_ENC_B_GPIO_Port GPIOB
 
+#define Servo0_Pin GPIO_PIN_15
+#define Servo0_GPIO_Port GPIOA
+#define Servo1_Pin GPIO_PIN_3
+#define Servo1_GPIO_Port GPIOB
+#define Servo2_Pin GPIO_PIN_2
+#define Servo2_GPIO_Port GPIOA
+#define Servo3_Pin GPIO_PIN_3
+#define Servo3_GPIO_Port GPIOA
+
 /* ########################## Assert Selection ############################## */
 /**
   * @brief Uncomment the line below to expanse the "assert_param" macro in the 

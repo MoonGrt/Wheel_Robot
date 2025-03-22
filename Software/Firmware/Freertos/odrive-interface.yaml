@@ -428,64 +428,50 @@ interfaces:
     brief: Interface for servo control functionality.
     doc: |
       Provides access to servo-specific control parameters and real-time status.
-      This interface allows precise position, velocity, and current control modes.
+      This interface allows precise angle, velocity control modes.
     attributes:
       error:
         nullflag: NONE
         flags:
-          POSITION_LIMIT:
-            brief: Commanded position exceeds mechanical limits.
-      target_pos:
+          ANGEL_LIMIT:
+            brief: Commanded angle exceeds mechanical limits.
+      angle:
         type: float32
+        c_setter: 'set_angle'
         unit: turns
-        brief: Target position for position control mode.
-        doc: Applies only when controller.config.control_mode is POSITION_CONTROL.
-      target_vel:
-        type: float32
-        unit: turns/s
-        brief: Target velocity for velocity control mode.
-      actual_pos:
-        type: readonly float32
-        unit: turns
-        brief: Filtered position feedback from encoder.
-      actual_vel:
-        type: readonly float32
-        unit: turns/s
-        brief: Filtered velocity estimate.
+        brief: Target angle for angle control mode.
+        doc: Applies only when controller.config.control_mode is ANGEL_CONTROL.
+      # velocity:
+      #   type: float32
+      #   c_setter: 'set_velocity'
+      #   unit: turns/s
+      #   brief: Target velocity for velocity control mode.
       config:
         c_is_class: False
         attributes:
-          pos_gain:
-            type: float32
-            unit: (A)/(turns)
-            brief: Position loop proportional gain.
-          vel_gain:
-            type: float32
-            unit: (A)/(turns/s)
-            brief: Velocity loop proportional gain.
-          vel_integrator_gain:
-            type: float32
-            unit: (A)/(turns)
-            brief: Velocity loop integrator gain.
-          pos_limit_min:
+          servo_motor_type:
+            type: uint32
+            doc: The type of motor used for the servo.
+          servo_angle_min:
             type: float32
             unit: turns
-            doc: Minimum allowable position command (soft limit).
-          pos_limit_max:
+            doc: Minimum allowable angle command (soft limit).
+          servo_angle_max:
             type: float32
             unit: turns
-            doc: Maximum allowable position command (soft limit).
-    # functions:
-    #   engage:
-    #     brief: Enable servo power stage.
-    #     doc: Must be called before sending motion commands.
-    #   disengage:
-    #     brief: Disable servo power stage immediately.
-    #   set_home:
-    #     params: [pos: float32]
-    #     doc: Sets current position as home (zero reference).
-    #   trigger_homing:
-    #     doc: Initiate automatic homing sequence based on config.homing_method.
+            doc: Maximum allowable angle command (soft limit).
+          # angle_gain:
+          #   type: float32
+          #   unit: (A)/(turns)
+          #   brief: Angle loop proportional gain.
+          # vel_gain:
+          #   type: float32
+          #   unit: (A)/(turns/s)
+          #   brief: Velocity loop proportional gain.
+          # vel_integrator_gain:
+          #   type: float32
+          #   unit: (A)/(turns)
+          #   brief: Velocity loop integrator gain.
 
   ODrive.Endpoint:
     c_is_class: False
@@ -1528,6 +1514,10 @@ interfaces:
           gpio4_pwm_mapping: {type: ODrive.Endpoint, c_name: 'pwm_mappings[3]', doc: Make sure the corresponding GPIO is in `GPIO_MODE_PWM`.}
       axis0: {type: ODrive.Axis, c_name: get_axis(0)}
       axis1: {type: ODrive.Axis, c_name: get_axis(1)}
+      servo0: {type: ODrive.Servo, c_name: get_servo(0)}
+      servo1: {type: ODrive.Servo, c_name: get_servo(1)}
+      servo2: {type: ODrive.Servo, c_name: get_servo(0)}
+      servo3: {type: ODrive.Servo, c_name: get_servo(1)}
 
 valuetypes:
   ODrive.GpioMode:

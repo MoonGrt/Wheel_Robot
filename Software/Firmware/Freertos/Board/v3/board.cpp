@@ -155,6 +155,33 @@ std::array<Axis, AXIS_COUNT> axes{{
 }};
 
 
+std::array<Servo, SERVOS_COUNT> servos{{
+    {
+        0, // axis_num
+        &htim2, // timer
+        TIM_CHANNEL_1, // channel
+        {Servo0_GPIO_Port, Servo0_Pin} // gpio
+    },
+    {
+        1, // axis_num
+        &htim2, // timer
+        TIM_CHANNEL_1, // channel
+        {Servo1_GPIO_Port, Servo1_Pin} // gpio
+    },
+    {
+        2, // axis_num
+        &htim2, // timer
+        TIM_CHANNEL_1, // channel
+        {Servo2_GPIO_Port, Servo2_Pin} // gpio
+    },
+    {   
+        3, // axis_num
+        &htim2, // timer
+        TIM_CHANNEL_1, // channel
+        {Servo3_GPIO_Port, Servo3_Pin} // gpio
+    }
+}};
+
 
 #if (HW_VERSION_MINOR == 1) || (HW_VERSION_MINOR == 2)
 Stm32Gpio gpios[] = {

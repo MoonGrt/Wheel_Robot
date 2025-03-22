@@ -29,6 +29,7 @@
 #endif
 
 #define AXIS_COUNT (2)
+#define SERVOS_COUNT (4)
 
 // Total count of GPIOs, including encoder pins, CAN pins and a dummy GPIO0.
 // ODrive v3.4 and earlier don't have GPIOs 6, 7 and 8 but to keep the numbering
@@ -90,8 +91,10 @@ using TOpAmp = Drv8301;
 
 #include <MotorControl/motor.hpp>
 #include <MotorControl/encoder.hpp>
+#include <MotorControl/servo.hpp>
 
 extern std::array<Axis, AXIS_COUNT> axes;
+extern std::array<Servo, SERVOS_COUNT> servos;
 extern Motor motors[AXIS_COUNT];
 extern OnboardThermistorCurrentLimiter fet_thermistors[AXIS_COUNT];
 extern Encoder encoders[AXIS_COUNT];

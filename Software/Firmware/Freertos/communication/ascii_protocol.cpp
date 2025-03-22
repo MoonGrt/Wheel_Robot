@@ -71,7 +71,7 @@ static Introspectable root_obj = ODrive4TypeInfo<ODrive>::make_introspectable(od
 // @param len size of the buffer
 void AsciiProtocol::process_line(cbufptr_t buffer) {
     static_assert(sizeof(char) == sizeof(uint8_t));
-    
+
     // scan line to find beginning of checksum and prune comment
     uint8_t checksum = 0;
     size_t checksum_start = SIZE_MAX;
@@ -116,12 +116,12 @@ void AsciiProtocol::process_line(cbufptr_t buffer) {
         case 't': cmd_set_trapezoid_trajectory(cmd, use_checksum);    break;  // trapezoidal trajectory
         case 'f': cmd_get_feedback(cmd, use_checksum);                break;  // feedback
         case 'h': cmd_help(cmd, use_checksum);                        break;  // Help
-        case 'i': cmd_info_dump(cmd, use_checksum);                   break;  // Dump device 
+        case 'i': cmd_info_dump(cmd, use_checksum);                   break;  // Dump device
         case 'm': cmd_set_servo_motor(cmd, use_checksum);             break;  // Servo motors
         case 's': cmd_system_ctrl(cmd, use_checksum);                 break;  // System
         case 'r': cmd_read_property(cmd,  use_checksum);              break;  // read property
         case 'w': cmd_write_property(cmd, use_checksum);              break;  // write property
-        case 'u': cmd_update_axis_wdg(cmd, use_checksum);             break;  // Update axis watchdog. 
+        case 'u': cmd_update_axis_wdg(cmd, use_checksum);             break;  // Update axis watchdog.
         case 'e': cmd_encoder(cmd, use_checksum);                     break;  // Encoder commands
         default : cmd_unknown(nullptr, use_checksum);                 break;
     }
@@ -221,12 +221,41 @@ void AsciiProtocol::cmd_set_torque(char * pStr, bool use_checksum) {
     }
 }
 
-// @brief Executes the set torque control command
+// @brief Executes the set servo motor control command
 // @param pStr buffer of ASCII encoded values
 // @param response_channel reference to the stream to respond on
 // @param use_checksum bool to indicate whether a checksum is required on response
 void AsciiProtocol::cmd_set_servo_motor(char * pStr, bool use_checksum) {
+    unsigned servo_number[4];
+    float servo_angle[4];
 
+    pStr++;  // Move past the 'm'
+
+    // Parse up to 4 pairs of "servo_number servo_angle"
+    int numscan = sscanf(pStr, "%u %f %u %f %u %f %u %f", 
+                         &servo_number[0], &servo_angle[0], 
+                         &servo_number[1], &servo_angle[1], 
+                         &servo_number[2], &servo_angle[2], 
+                         &servo_number[3], &servo_angle[3]);
+
+    if (numscan < 2 || numscan % 2 != 0) {
+        respond(use_checksum, "invalid servo input format");
+        return;
+    }
+
+    int num_pairs = numscan / 2;
+
+    for (int i = 0; i < num_pairs; i++) {
+        if (servo_number[i] >= SERVOS_COUNT) {
+            respond(use_checksum, "invalid servo number %u", servo_number[i]);
+            return;
+        }
+
+        // Apply the angle to the servo
+        servos[servo_number[i]].set_angle(servo_angle[i]);
+    }
+
+    respond(use_checksum, "set %d servo(s)", num_pairs);
 }
 
 // @brief Sets the encoder linear count
@@ -438,7 +467,7 @@ void AsciiProtocol::on_read_finished(ReadResult result) {
             // Ignoring this line cause it didn't start at a new-line character
             read_active_ = true;
         }
-        
+
         // Discard the processed bytes and shift the remainder to the beginning of the buffer
         size_t n_remaining = result.end - end_of_line - 1;
         memmove(rx_buf_, end_of_line + 1, n_remaining);
