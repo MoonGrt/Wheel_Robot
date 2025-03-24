@@ -40,7 +40,7 @@ void init_communication(void) {
 
     if (odrv.config_.enable_uart_a && uart_a) {
         // start_uart_server(uart_a);
-        // start_uart_publisher(uart_a);
+        start_uart_publisher(uart_a);
     }
     if (odrv.config_.enable_uart_b && uart_b) {
 
