@@ -99,6 +99,9 @@
         "cmsis_os.h": "c",
         "usbd_cdc_if.h": "c",
         "usbd_desc.h": "c",
-        "stm32f4xx_hal.h": "c"
+        "stm32f4xx_hal.h": "c",
+        "cmsis_armcc.h": "c",
+        "freertos.h": "c",
+        "timers.h": "c"
     }
 }

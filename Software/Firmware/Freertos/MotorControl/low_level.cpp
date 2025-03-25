@@ -78,16 +78,16 @@ osThreadId analog_thread = 0;
 
 // @brief Arms the brake resistor
 void safety_critical_arm_brake_resistor() {
-    CRITICAL_SECTION() {
-        for (size_t i = 0; i < AXIS_COUNT; ++i) {
-            axes[i].motor_.I_bus_ = 0.0f;
-        }
-        brake_resistor_armed = true;
-#if HW_VERSION_MAJOR == 3
-        htim2.Instance->CCR3 = 0;
-        htim2.Instance->CCR4 = TIM_APB1_PERIOD_CLOCKS + 1;
-#endif
-    }
+//     CRITICAL_SECTION() {
+//         for (size_t i = 0; i < AXIS_COUNT; ++i) {
+//             axes[i].motor_.I_bus_ = 0.0f;
+//         }
+//         brake_resistor_armed = true;
+// #if HW_VERSION_MAJOR == 3
+//         htim2.Instance->CCR3 = 0;
+//         htim2.Instance->CCR4 = TIM_APB1_PERIOD_CLOCKS + 1;
+// #endif
+//     }
 }
 
 // @brief Disarms the brake resistor and by extension
@@ -95,22 +95,22 @@ void safety_critical_arm_brake_resistor() {
 // After calling this, the brake resistor can only be armed again
 // by calling safety_critical_arm_brake_resistor().
 void safety_critical_disarm_brake_resistor() {
-    bool brake_resistor_was_armed = brake_resistor_armed;
+//     bool brake_resistor_was_armed = brake_resistor_armed;
 
-    CRITICAL_SECTION() {
-        brake_resistor_armed = false;
-#if HW_VERSION_MAJOR == 3
-        htim2.Instance->CCR3 = 0;
-        htim2.Instance->CCR4 = TIM_APB1_PERIOD_CLOCKS + 1;
-#endif
-    }
+//     CRITICAL_SECTION() {
+//         brake_resistor_armed = false;
+// #if HW_VERSION_MAJOR == 3
+//         htim2.Instance->CCR3 = 0;
+//         htim2.Instance->CCR4 = TIM_APB1_PERIOD_CLOCKS + 1;
+// #endif
+//     }
 
-    // Check necessary to prevent infinite recursion
-    if (brake_resistor_was_armed) {
-        for (auto& axis: axes) {
-            axis.motor_.disarm();
-        }
-    }
+//     // Check necessary to prevent infinite recursion
+//     if (brake_resistor_was_armed) {
+//         for (auto& axis: axes) {
+//             axis.motor_.disarm();
+//         }
+//     }
 }
 
 // @brief Updates the brake resistor PWM timings unless
