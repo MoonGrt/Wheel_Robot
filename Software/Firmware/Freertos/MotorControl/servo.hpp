@@ -16,6 +16,7 @@ class Servo : public ODriveIntf::ServoIntf {
     public:
     struct Config_t {
         uint32_t servo_motor_type = SERVO_MOTOR_TYPE_NONE;
+        float servo_init_angle = 0.0f;
         float servo_angle_min = 0.0f;
         float servo_angle_max = 180.0f;
     };

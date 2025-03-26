@@ -3,7 +3,7 @@
 #define PWM_MIN_PULSE 500  // 最小脉宽（单位：微秒），对应 0°
 #define PWM_MAX_PULSE 2500 // 最大脉宽（单位：微秒），对应 180°
 
-Servo::Servo(int servo_num, TIM_HandleTypeDef* timer, uint32_t channel, Stm32Gpio gpio) : 
+Servo::Servo(int servo_num, TIM_HandleTypeDef* timer, uint32_t channel, Stm32Gpio gpio) :
         servo_num_(servo_num), timer_(timer), channel_(channel), gpio_(gpio)
 {
 }
@@ -13,7 +13,7 @@ bool Servo::set_angle(float angle) {
     if (angle > config_.servo_angle_max) angle = config_.servo_angle_max;
 
     angle_ = angle;
-    
+
     // 计算占空比，对应脉宽范围：500us - 2500us
     uint16_t pulse = PWM_MIN_PULSE + (angle * (PWM_MAX_PULSE - PWM_MIN_PULSE) / (config_.servo_angle_max - config_.servo_angle_min));
 

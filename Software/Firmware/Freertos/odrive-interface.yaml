@@ -452,6 +452,10 @@ interfaces:
           servo_motor_type:
             type: uint32
             doc: The type of motor used for the servo.
+          servo_init_angle:
+            type: float32
+            unit: turns
+            doc: The initial angle of the servo.
           servo_angle_min:
             type: float32
             unit: turns

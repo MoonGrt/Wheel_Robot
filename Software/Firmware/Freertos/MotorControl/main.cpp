@@ -100,6 +100,8 @@ static bool config_read_all() {
                   config_manager.read(&motors[i].motor_thermistor_.config_) &&
                   config_manager.read(&axes[i].config_);
     }
+    for (size_t i = 0; (i < SERVOS_COUNT) && success; ++i)
+        success = config_manager.read(&servos[i].config_);
     return success;
 }
 
@@ -120,6 +122,8 @@ static bool config_write_all() {
                   config_manager.write(&motors[i].motor_thermistor_.config_) &&
                   config_manager.write(&axes[i].config_);
     }
+    for (size_t i = 0; (i < SERVOS_COUNT) && success; ++i)
+        success = config_manager.write(&servos[i].config_);
     return success;
 }
 
@@ -140,6 +144,8 @@ static void config_clear_all() {
         motors[i].motor_thermistor_.config_ = {};
         axes[i].clear_config();
     }
+    for (size_t i = 0; (i < SERVOS_COUNT); ++i)
+        servos[i].config_ = {};
 }
 
 static bool config_apply_all() {
@@ -153,6 +159,8 @@ static bool config_apply_all() {
                && motors[i].motor_thermistor_.apply_config()
                && axes[i].apply_config();
     }
+    // for (size_t i = 0; (i < SERVOS_COUNT) && success; ++i)
+    //     servos[i].config_ = {};
     return success;
 }
 
