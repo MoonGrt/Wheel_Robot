@@ -41,7 +41,7 @@ def version_str_to_tuple(version_string):
 #         print(ex)
 #         return "[unknown version]", 0, 0, 0, 1
 def get_version_from_git():
-    return "fw-v0.5.6-4-gf9b5419c*", 0, 4, 11, True
+    return "fw-v0.5.6-4-gf9b5419c*", 0, 5, 6, True
 
 def get_version_str(git_only=False, is_post_release=False, bump_rev=False, release_override=False):
     """

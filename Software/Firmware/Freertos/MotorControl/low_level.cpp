@@ -170,11 +170,19 @@ void start_adc_pwm() {
 
     if (odrv.config_.enable_servo_motor) {
         // Start servo motor PWM
-        for (int i = 0; i < SERVOS_COUNT; i++){
-            Servo *servo = &servos[i];
-            servo->set_angle(servo->config_.servo_init_angle);
-                HAL_TIM_PWM_Start(servo->timer_, servo->channel_);
-        }
+        // for (int i = 0; i < SERVOS_COUNT; i++){
+        //     Servo *servo = &servos[i];
+        //     servo->set_angle(servo->config_.servo_init_angle);
+        //         HAL_TIM_PWM_Start(servo->timer_, servo->channel_);
+        // }
+        htim2.Instance->CCR1 = 0;
+        htim2.Instance->CCR2 = 0;
+        htim2.Instance->CCR3 = 0;
+        htim2.Instance->CCR4 = 0;
+        HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+        HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+        HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
+        HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
     }
 
     if (odrv.config_.enable_brake_resistor) {
