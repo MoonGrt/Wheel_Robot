@@ -435,12 +435,27 @@ interfaces:
         flags:
           ANGEL_LIMIT:
             brief: Commanded angle exceeds mechanical limits.
+          values:
+      # ServoState:
+      #   values:
+      #     UNDEFINED:
+      #       doc: will fall through to idle
+      #     IDLE:
+      #       brief: Disable motor PWM and do nothing.
+      #     CONTROL:
+      #       brief: Run closed loop control.
       angle:
         type: float32
         c_setter: 'set_angle'
         unit: turns
         brief: Target angle for angle control mode.
         doc: Applies only when controller.config.control_mode is ANGEL_CONTROL.
+      pulse:
+        type: uint32
+        c_setter: 'set_pulse'
+        unit: turns
+        brief: Target pulse width for velocity control mode.
+        doc: Applies only when controller.config.control_mode is VELOCITY_CONTROL.
       # velocity:
       #   type: float32
       #   c_setter: 'set_velocity'
@@ -452,30 +467,34 @@ interfaces:
           servo_motor_type:
             type: uint32
             doc: The type of motor used for the servo.
-          servo_init_angle:
+          servo_freq:
+            type: uint32
+            unit: Hz
+            doc: The frequency of the servo.
+          init_mode:
+            type: uint32
+            doc: Whether the servo is initially enabled.
+          init_pulse:
+            type: float32
+            doc: The initial pulse width of the servo.
+          init_angle:
             type: float32
             unit: turns
             doc: The initial angle of the servo.
-          servo_angle_min:
+          pulse_min:
+            type: float32
+            doc: Minimum allowable angle command (soft limit).
+          pulse_max:
+            type: float32
+            doc: Maximum allowable angle command (soft limit).
+          angle_min:
             type: float32
             unit: turns
             doc: Minimum allowable angle command (soft limit).
-          servo_angle_max:
+          angle_max:
             type: float32
             unit: turns
             doc: Maximum allowable angle command (soft limit).
-          # angle_gain:
-          #   type: float32
-          #   unit: (A)/(turns)
-          #   brief: Angle loop proportional gain.
-          # vel_gain:
-          #   type: float32
-          #   unit: (A)/(turns/s)
-          #   brief: Velocity loop proportional gain.
-          # vel_integrator_gain:
-          #   type: float32
-          #   unit: (A)/(turns)
-          #   brief: Velocity loop integrator gain.
 
   ODrive.Endpoint:
     c_is_class: False
