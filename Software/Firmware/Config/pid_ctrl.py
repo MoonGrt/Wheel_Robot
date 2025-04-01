@@ -4,7 +4,7 @@ import threading
 import odrive
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QSlider, QLabel, QWidget,
-    QHBoxLayout, QRadioButton, QLineEdit, QPushButton
+    QHBoxLayout, QRadioButton, QLineEdit, QPushButton, QButtonGroup
 )
 from PyQt5.QtCore import Qt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
@@ -17,15 +17,7 @@ class ODriveGUI(QMainWindow):
         super().__init__()
 
         # 连接 ODrive
-        try:
-            self.odrive = odrive.find_any(timeout=10)
-            print("Odrive Connected")
-            self.odrive_setup()
-            print("Motor Setup Successed")
-            self.set_servo_angle(25, 25)
-        except Exception as e:
-            print(f"error: {str(e)}")
-            raise
+        self.odrive_init()
 
         # 初始化界面
         self.setWindowTitle("ODrive 运行控制")
@@ -50,7 +42,11 @@ class ODriveGUI(QMainWindow):
 
         # 记录当前模式
         self.current_mode = "velocity"
+        # 记录当前轴
+        self.current_axis = "axis0"
 
+        # 创建motor切换
+        self.create_motor_selection(layout)
         # 创建模式切换
         self.create_mode_selection(layout)
         # 创建参数调节 UI
@@ -62,6 +58,16 @@ class ODriveGUI(QMainWindow):
         self.running = True
         self.plot_thread = threading.Thread(target=self.update_plot, daemon=True)
         self.plot_thread.start()
+
+    def odrive_init(self):
+        try:
+            self.odrive = odrive.find_any(timeout=10)
+            print("Odrive Connected")
+            self.odrive_setup()
+            print("Motor Setup Successed")
+        except Exception as e:
+            print(f"error: {str(e)}")
+            raise
 
     def odrive_setup(self):
         # 配置输入模式和控制模式
@@ -82,6 +88,8 @@ class ODriveGUI(QMainWindow):
                     self.odrive.axis1.current_state != AxisState.IDLE):
                     time.sleep(0.1)
             else:
+                self.odrive.axis0.requested_state = AxisState.IDLE
+                self.odrive.axis1.requested_state = AxisState.IDLE
                 break
 
     def check_odrive_error(self, clear=True, full=False):
@@ -167,18 +175,24 @@ class ODriveGUI(QMainWindow):
         elif name == 'axis1':
             self.odrive.axis1.requested_state = AxisState.ENCODER_OFFSET_CALIBRATION
 
-    def set_servo_angle(self, left_angle, right_angle):
-        # left_angle = max(min(left_angle, self.max_angle), self.min_angle)
-        # right_angle = max(min(right_angle, self.max_angle), self.min_angle)
-        try:
-            # 根据实际电机方向可能需要调整符号
-            self.odrive.servo0.angle = 90 - right_angle
-            self.odrive.servo1.angle = 80 + right_angle
-            self.odrive.servo2.angle = 90 + left_angle
-            self.odrive.servo3.angle = 100 - left_angle
-        except Exception as e:
-            self.get_logger().error(f"舵机控制失败: {str(e)}")
-        pass
+    def create_motor_selection(self, layout):
+        """ 创建motor选择按钮 """
+        hbox = QHBoxLayout()
+
+        self.mode_axis0 = QRadioButton("axis0")
+        self.mode_axis1 = QRadioButton("axis1")
+        self.mode_axis0.setChecked(True)  # 默认位置模式
+
+        self.motor_button_group = QButtonGroup(self)
+        self.motor_button_group.addButton(self.mode_axis0)
+        self.motor_button_group.addButton(self.mode_axis1)
+
+        self.mode_axis0.toggled.connect(self.update_axis)
+        self.mode_axis1.toggled.connect(self.update_axis)
+
+        hbox.addWidget(self.mode_axis0)
+        hbox.addWidget(self.mode_axis1)
+        layout.addLayout(hbox)
 
     def create_mode_selection(self, layout):
         """ 创建模式选择按钮 """
@@ -188,12 +202,34 @@ class ODriveGUI(QMainWindow):
         self.mode_position = QRadioButton("位置模式")
         self.mode_velocity.setChecked(True)  # 默认位置模式
 
+        self.mode_button_group = QButtonGroup(self)
+        self.mode_button_group.addButton(self.mode_velocity)
+        self.mode_button_group.addButton(self.mode_position)
+
         self.mode_velocity.toggled.connect(self.update_mode)
         self.mode_position.toggled.connect(self.update_mode)
 
         hbox.addWidget(self.mode_velocity)
         hbox.addWidget(self.mode_position)
         layout.addLayout(hbox)
+
+    def update_axis(self):
+        """ 更新轴 """
+        if self.mode_axis0.isChecked():
+            self.odrive.axis1.controller.input_vel = 0
+            self.odrive.axis1.controller.input_pos = 0
+            self.odrive.axis1.requested_state = AxisState.IDLE
+            self.current_axis = "axis0"
+            print("切换到 **axis0**")
+        elif self.mode_axis1.isChecked():
+            self.odrive.axis0.controller.input_vel = 0
+            self.odrive.axis0.controller.input_pos = 0
+            self.odrive.axis0.requested_state = AxisState.IDLE
+            self.current_axis = "axis1"
+            print("切换到 **axis1**")
+        self.odrive_control_button.setText("启动")
+        self.odrive_control_button.setChecked(False)
+        self.odrive_running = False
 
     def update_mode(self):
         """ 更新控制模式，并修改采样对象 """
@@ -217,11 +253,10 @@ class ODriveGUI(QMainWindow):
         self.target_button.clicked.connect(self.run_odrive)
 
         # ODrive 运行控制按钮
-        self.odrive_control_button = QPushButton("停止")
+        self.odrive_control_button = QPushButton("启动")
         self.odrive_control_button.setCheckable(True)  # 允许按钮保持按下状态
-        self.odrive_control_button.setChecked(True)
         self.odrive_control_button.clicked.connect(self.toggle_odrive_state)
-        self.odrive_running = True  # 初始状态
+        self.odrive_running = False  # 初始状态
 
         hbox.addWidget(self.target_label)
         hbox.addWidget(self.target_input)
@@ -231,26 +266,35 @@ class ODriveGUI(QMainWindow):
 
     def run_odrive(self):
         """ 运行 ODrive 目标值 """
+        if self.current_axis == "axis0":
+            axis = self.odrive.axis0
+        else:
+            axis = self.odrive.axis1
+
         try:
             target_value = float(self.target_input.text())
             if self.current_mode == "position":
-                self.odrive.axis0.controller.input_pos = target_value
+                axis.controller.input_pos = target_value
                 print(f"设置目标 **位置**: {target_value}")
             elif self.current_mode == "velocity":
-                self.odrive.axis0.controller.input_vel = target_value
+                axis.controller.input_vel = target_value
                 print(f"设置目标 **速度**: {target_value}")
-
         except ValueError:
             print("输入无效，请输入数字！")
 
     def toggle_odrive_state(self):
         """ 启动/停止 ODrive CLOSED_LOOP_CONTROL """
+        if self.current_axis == "axis0":
+            axis = self.odrive.axis0
+        else:
+            axis = self.odrive.axis1
+
         if self.odrive_running:
-            self.odrive.axis0.requested_state = AxisState.IDLE
+            axis.requested_state = AxisState.IDLE
             self.odrive_control_button.setText("启动")
             print("ODrive 退出 **CLOSED_LOOP_CONTROL**")
         else:
-            self.odrive.axis0.requested_state = AxisState.CLOSED_LOOP_CONTROL
+            axis.requested_state = AxisState.CLOSED_LOOP_CONTROL
             self.odrive_control_button.setText("停止")
             print("ODrive 进入 **CLOSED_LOOP_CONTROL**")
 
@@ -262,11 +306,15 @@ class ODriveGUI(QMainWindow):
         self.sliders = []
         self.labels = []
 
-        # 定义参数
+        if self.current_axis == "axis0":
+            axis = self.odrive.axis0
+        else:
+            axis = self.odrive.axis1
+
         params = [
-            ("pos_gain", 0.0, 100.0, self.odrive.axis0.controller.config.pos_gain),
-            ("vel_gain", 0.0, 2.5, self.odrive.axis0.controller.config.vel_gain),
-            ("vel_integrator_gain", 0.0, 10.0, self.odrive.axis0.controller.config.vel_integrator_gain),
+            ("pos_gain", 0.0, 100.0, axis.controller.config.pos_gain),
+            ("vel_gain", 0.0, 2.5, axis.controller.config.vel_gain),
+            ("vel_integrator_gain", 0.0, 10.0, axis.controller.config.vel_integrator_gain),
         ]
 
         for i, (name, min_val, max_val, default) in enumerate(params):
@@ -291,12 +339,18 @@ class ODriveGUI(QMainWindow):
         params = ["pos_gain", "vel_gain", "vel_integrator_gain"]
         param_name = params[index]
 
+        if self.current_axis == "axis0":
+            axis = self.odrive.axis0
+        else:
+            axis = self.odrive.axis1
+
+        # 更新参数值
         if param_name == "pos_gain":
-            self.odrive.axis0.controller.config.pos_gain = value
+            axis.controller.config.pos_gain = value
         elif param_name == "vel_gain":
-            self.odrive.axis0.controller.config.vel_gain = value
+            axis.controller.config.vel_gain = value
         elif param_name == "vel_integrator_gain":
-            self.odrive.axis0.controller.config.vel_integrator_gain = value
+            axis.controller.config.vel_integrator_gain = value
 
         self.labels[index].setText(f"{param_name}: {value:.2f}")
         print(f"更新参数: {param_name} = {value:.2f}")
@@ -306,10 +360,15 @@ class ODriveGUI(QMainWindow):
         while self.running:
             elapsed_time = time.time() - self.start_time
 
+            if self.current_axis == "axis0":
+                axis = self.odrive.axis0
+            else:
+                axis = self.odrive.axis1
+
             if self.odrive_running:
                 if self.current_mode == "position":
-                    value = self.odrive.axis0.encoder.pos_estimate
-                    # print(f"pos: {value:.2f}")
+                    value = axis.encoder.pos_estimate
+                    # print(f"pos: {value:.4f}")
                     self.x_pos_data.append(elapsed_time)
                     self.y_pos_data.append(value)
                     if len(self.x_pos_data) > self.max_data_points:
@@ -318,8 +377,8 @@ class ODriveGUI(QMainWindow):
                     self.ax.clear()
                     self.ax.plot(self.x_pos_data, self.y_pos_data, 'r-')
                 else:
-                    value = self.odrive.axis0.encoder.vel_estimate
-                    # print(f"vel: {value:.2f}")
+                    value = axis.encoder.vel_estimate
+                    # print(f"vel: {value:.4f}")
                     self.x_vel_data.append(elapsed_time)
                     self.y_vel_data.append(value)
                     if len(self.x_vel_data) > self.max_data_points:
@@ -327,16 +386,19 @@ class ODriveGUI(QMainWindow):
                         self.y_vel_data.pop(0)
                     self.ax.clear()
                     self.ax.plot(self.x_vel_data, self.y_vel_data, 'b-')
-                    self.ax.set_ylim(-5, 5)  # 速度模式固定 Y 轴范围
-
+                    # self.ax.set_ylim(-5, 5)  # 速度模式固定 Y 轴范围
                 self.canvas.draw()
 
-            time.sleep(0.001)
+            time.sleep(0.01)
 
     def closeEvent(self, event):
         """窗口关闭时，确保 ODrive 停止"""
         self.odrive.axis0.controller.input_vel = 0
+        self.odrive.axis0.controller.input_pos = 0
         self.odrive.axis0.requested_state = AxisState.IDLE
+        self.odrive.axis1.controller.input_vel = 0 
+        self.odrive.axis1.controller.input_pos = 0
+        self.odrive.axis1.requested_state = AxisState.IDLE
         event.accept()  # 允许窗口关闭
 
 

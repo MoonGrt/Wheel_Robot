@@ -178,7 +178,6 @@ static void uart_server_thread(void * ctx) {
 }
 
 static void uart_publisher_thread(void *) {
-    osDelay(30000);
     ascii_over_uart.respond(false, "==== Odrive ====");
     for (;;) {
         ascii_over_uart.respond(false, "%f %f %f %f",
