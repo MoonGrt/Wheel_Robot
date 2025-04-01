@@ -28,7 +28,6 @@ import os
 def generate_launch_description():
     share_dir = get_package_share_directory('ydlidar')
     parameter_file = LaunchConfiguration('params_file')
-    node_name = 'ydlidar_node'
 
     params_declare = DeclareLaunchArgument('params_file',
                                            default_value=os.path.join(
@@ -43,14 +42,18 @@ def generate_launch_description():
                                 parameters=[parameter_file],
                                 node_namespace='/',
                                 )
-    tf2_node = Node(package='tf2_ros',
-                    node_executable='static_transform_publisher',
-                    node_name='static_tf_pub_laser',
-                    arguments=['0', '0', '0.02','0', '0', '0', '1','base_link','laser'],
-                    )
+
+    tf2_node = Node(
+        package='tf2_ros',  # 指定使用 tf2_ros 包
+        node_executable='static_transform_publisher',  # 运行 static_transform_publisher 可执行文件
+        node_name='static_tf_pub_laser',  # 该节点的名称
+        arguments=['0', '0', '0.02',  # 位置 (x, y, z) -> (0, 0, 0.02)
+                '0', '0', '0', '1',  # 旋转 (四元数 qx, qy, qz, qw) -> (0, 0, 0, 1) (即无旋转)
+                'base_link', 'laser'],  # 父坐标系 'base_link'，子坐标系 'laser'
+    )
 
     return LaunchDescription([
         params_declare,
         driver_node,
-        #tf2_node,
+        tf2_node,
     ])

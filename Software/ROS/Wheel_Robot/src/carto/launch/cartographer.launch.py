@@ -7,7 +7,7 @@ from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
     # 定位到功能包的地址
-    pkg_share = FindPackageShare(package='fishbot_cartographer').find('fishbot_cartographer')
+    pkg_share = FindPackageShare(package='carto').find('carto')
     
     #=====================运行节点需要的配置=======================================================================
     # 是否使用仿真时间，我们用gazebo，这里设置成true
@@ -19,7 +19,7 @@ def generate_launch_description():
     # 配置文件夹路径
     configuration_directory = LaunchConfiguration('configuration_directory',default= os.path.join(pkg_share, 'config') )
     # 配置文件
-    configuration_basename = LaunchConfiguration('configuration_basename', default='fishbot_2d.lua')
+    configuration_basename = LaunchConfiguration('configuration_basename', default='2d.lua')
 
     
     #=====================声明三个节点，cartographer/occupancy_grid_node/rviz_node=================================

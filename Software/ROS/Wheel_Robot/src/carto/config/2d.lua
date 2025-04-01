@@ -60,4 +60,4 @@ POSE_GRAPH.constraint_builder.global_localization_min_score = 0.7
 -- 设置0可关闭全局SLAM
 -- POSE_GRAPH.optimize_every_n_nodes = 0
 
-return option
+return options

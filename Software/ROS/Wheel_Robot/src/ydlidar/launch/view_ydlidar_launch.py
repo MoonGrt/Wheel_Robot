@@ -20,9 +20,8 @@ def generate_launch_description():
 
 
     return LaunchDescription([
-        IncludeLaunchDescription(PythonLaunchDescriptionSource([os.path.join(get_package_share_directory('ydlidar'), 'launch'),
-'/ydliar_launch.py'])
-),
+        IncludeLaunchDescription(PythonLaunchDescriptionSource(
+            [os.path.join(get_package_share_directory('ydlidar'), 'launch'), '/ydliar_launch.py'])),
         Node(
             package='rviz2',
             executable='rviz2',

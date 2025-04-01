@@ -18,15 +18,9 @@ def generate_launch_description():
         '/x3_ydlidar_launch.py']),
          condition=LaunchConfigurationEquals('lidar_type', 'x3')
     )
-	lidar_4ros_launch = IncludeLaunchDescription(PythonLaunchDescriptionSource(
-        [os.path.join(get_package_share_directory('ydlidar'), 'launch'),
-        '/4ros_ydlidar_launch.py']),
-         condition=LaunchConfigurationEquals('lidar_type', '4ros')
-    )
 	
 	return LaunchDescription([
         lidar_type_arg,
         lidar_x3_launch,
-        lidar_4ros_launch
     ])
 
