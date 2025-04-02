@@ -50,7 +50,7 @@ def generate_launch_description():
         node_name='static_tf_pub_laser',  # 该节点的名称
         arguments=['0', '0', '0.02',  # 位置 (x, y, z) -> (0, 0, 0.02)
                 '0', '0', '0', '1',  # 旋转 (四元数 qx, qy, qz, qw) -> (0, 0, 0, 1) (即无旋转)
-                'base_link', 'laser'],  # 父坐标系 'base_link'，子坐标系 'laser'
+                'base_link', 'laser_link'],  # 父坐标系 'base_link'，子坐标系 'laser_link'
     )
 
     rviz2_node = Node(package='rviz2',

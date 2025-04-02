@@ -1,197 +1,396 @@
-<?xml version="1.0"?>
-<robot name="fishbot">
-
-
-  <!-- Robot Footprint -->
-  <link name="base_footprint"/>
-
-  <joint name="base_joint" type="fixed">
-    <parent link="base_footprint"/>
-    <child link="base_link"/>
-    <origin xyz="0.0 0.0 0.076" rpy="0 0 0"/>
-  </joint>
-
-
-  <!-- base link -->
-  <link name="base_link">
-  	<visual>
-      <origin xyz="0 0 0.0" rpy="0 0 0"/>
-      <geometry>
-		<cylinder length="0.12" radius="0.10"/>
-      </geometry>
-      <material name="blue">
-      	<color rgba="0.1 0.1 1.0 0.5" /> 
-      </material>
-    </visual>
-    <collision>
-      <origin xyz="0 0 0.0" rpy="0 0 0"/>
-      <geometry>
-		<cylinder length="0.12" radius="0.10"/>
-      </geometry>
-      <material name="blue">
-      	<color rgba="0.1 0.1 1.0 0.5" /> 
-      </material>
-    </collision>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot
+  name="Wheel_Robot_Sim">
+  <link
+    name="base_link">
     <inertial>
-      <mass value="0.2"/>
-      <inertia ixx="0.0122666" ixy="0" ixz="0" iyy="0.0122666" iyz="0" izz="0.02"/>
+      <origin
+        xyz="-0.00238065061006057 2.73588787687858E-09 0.0969110593365891"
+        rpy="0 0 0" />
+      <mass
+        value="0.458809382377931" />
+      <inertia
+        ixx="0.000846411676685124"
+        ixy="-1.77408502350691E-11"
+        ixz="8.64502818210288E-06"
+        iyy="0.000619972366792605"
+        iyz="1.8838609651178E-11"
+        izz="0.00133794742632469" />
     </inertial>
-  </link>
-    
-  <!-- laser link -->
-  <link name="laser_link">
     <visual>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
       <geometry>
-        <cylinder length="0.02" radius="0.02"/>
+        <mesh
+          filename="package://wheel_robot/meshes/base_link.STL" />
       </geometry>
-      <material name="black">
-        <color rgba="0.0 0.0 0.0 0.5" /> 
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
       </material>
     </visual>
     <collision>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
       <geometry>
-        <cylinder length="0.02" radius="0.02"/>
+        <mesh
+          filename="package://wheel_robot/meshes/base_link.STL" />
       </geometry>
-      <material name="black">
-        <color rgba="0.0 0.0 0.0 0.5" /> 
-      </material>
     </collision>
-    <inertial>
-    <mass value="0.1"/>
-      <inertia ixx="0.000190416666667" ixy="0" ixz="0" iyy="0.0001904" iyz="0" izz="0.00036"/>
-    </inertial>
   </link>
-  
-  <!-- laser joint -->
-  <joint name="laser_joint" type="fixed">
-      <parent link="base_link" />
-      <child link="laser_link" />
-      <origin xyz="0 0 0.075" />
-  </joint>
-
-  <link name="imu_link">
-  	<visual>
-      <origin xyz="0 0 0.0" rpy="0 0 0"/>
+  <link
+    name="laser_link">
+    <inertial>
+      <origin
+        xyz="-0.0107217166215118 1.18460811424956E-06 0.0107261325903867"
+        rpy="0 0 0" />
+      <mass
+        value="0.0865823488601551" />
+      <inertia
+        ixx="2.64898105004389E-05"
+        ixy="2.35953372237587E-09"
+        ixz="2.66456504977664E-06"
+        iyy="4.01890246867624E-05"
+        iyz="7.39951577271416E-10"
+        izz="5.75066929524224E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
       <geometry>
-		    <box size="0.02 0.02 0.02"/>
+        <mesh
+          filename="package://wheel_robot/meshes/laser_link.STL" />
       </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.796078431372549 0.823529411764706 0.937254901960784 1" />
+      </material>
     </visual>
     <collision>
-      <origin xyz="0 0 0.0" rpy="0 0 0"/>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
       <geometry>
-		    <box size="0.02 0.02 0.02"/>
+        <mesh
+          filename="package://wheel_robot/meshes/laser_link.STL" />
       </geometry>
     </collision>
+  </link>
+  <joint
+    name="laser_joint"
+    type="fixed">
+    <origin
+      xyz="-0.000500000000000105 0 0.124626149791491"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="laser_link" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="imu_link">
     <inertial>
-      <mass value="0.1"/>
-        <inertia ixx="0.000190416666667" ixy="0" ixz="0" iyy="0.0001904" iyz="0" izz="0.00036"/>
-      </inertial>
-  </link>
-
-  <!-- imu joint -->
-  <joint name="imu_joint" type="fixed">
-      <parent link="base_link" />
-      <child link="imu_link" />
-      <origin xyz="0 0 0.02" />
-  </joint>
-
-
-  <link name="left_wheel_link">
-      <visual>
-        <origin xyz="0 0 0" rpy="1.57079 0 0"/>
-        <geometry>
-          <cylinder length="0.04" radius="0.032"/>
-        </geometry>
-          <material name="black">
-            <color rgba="0.0 0.0 0.0 0.5" /> 
-          </material>
-      </visual>
-      <collision>
-        <origin xyz="0 0 0" rpy="1.57079 0 0"/>
-        <geometry>
-          <cylinder length="0.04" radius="0.032"/>
-        </geometry>
-          <material name="black">
-            <color rgba="0.0 0.0 0.0 0.5" /> 
-          </material>
-      </collision>
-      <inertial>
-        <mass value="0.2"/>
-          <inertia ixx="0.000190416666667" ixy="0" ixz="0" iyy="0.0001904" iyz="0" izz="0.00036"/>
-        </inertial>
-  </link>
-    
-  <link name="right_wheel_link">
-      <visual>
-        <origin xyz="0 0 0" rpy="1.57079 0 0"/>
-        <geometry>
-          <cylinder length="0.04" radius="0.032"/>
-        </geometry>
-          <material name="black">
-            <color rgba="0.0 0.0 0.0 0.5" /> 
-          </material>
-      </visual>
-      <collision>
-        <origin xyz="0 0 0" rpy="1.57079 0 0"/>
-        <geometry>
-          <cylinder length="0.04" radius="0.032"/>
-        </geometry>
-          <material name="black">
-            <color rgba="0.0 0.0 0.0 0.5" /> 
-          </material>
-      </collision>
-      <inertial>
-      <mass value="0.2"/>
-      <inertia ixx="0.000190416666667" ixy="0" ixz="0" iyy="0.0001904" iyz="0" izz="0.00036"/>
+      <origin
+        xyz="0.00166642390258558 7.06736775417629E-18 0.0010745454413099"
+        rpy="0 0 0" />
+      <mass
+        value="0.00215686283305885" />
+      <inertia
+        ixx="1.32471275852853E-07"
+        ixy="-8.85725337338877E-23"
+        ixz="-5.8335032681901E-09"
+        iyy="2.97972630345502E-07"
+        iyz="2.36210781708205E-24"
+        izz="4.27056112920458E-07" />
     </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://wheel_robot/meshes/imu_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.517647058823529 1 0.384313725490196 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://wheel_robot/meshes/imu_link.STL" />
+      </geometry>
+    </collision>
   </link>
-    
-  <joint name="left_wheel_joint" type="continuous">
-      <parent link="base_link" />
-      <child link="left_wheel_link" />
-      <origin xyz="-0.02 0.10 -0.06" />
-      <axis xyz="0 1 0" />
+  <joint
+    name="imu_joint"
+    type="fixed">
+    <origin
+      xyz="-0.0100000000000001 0 0.094626149791491"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="imu_link" />
+    <axis
+      xyz="0 0 0" />
   </joint>
-
-  <joint name="right_wheel_joint" type="continuous">
-      <parent link="base_link" />
-      <child link="right_wheel_link" />
-      <origin xyz="-0.02 -0.10 -0.06" />
-      <axis xyz="0 1 0" />
-  </joint>
-
-  <link name="caster_link">
-      <visual>
-        <origin xyz="0 0 0" rpy="1.57079 0 0"/>
-        <geometry>
-            <sphere radius="0.016"/>
-        </geometry>
-          <material name="black">
-            <color rgba="0.0 0.0 0.0 0.5" /> 
-          </material>
-      </visual>
-      <collision>
-        <origin xyz="0 0 0" rpy="1.57079 0 0"/>
-        <geometry>
-            <sphere radius="0.016"/>
-        </geometry>
-          <material name="black">
-            <color rgba="0.0 0.0 0.0 0.5" /> 
-          </material>
-      </collision>
-      <inertial>
-      <mass value="0.02"/>
-      <inertia ixx="0.000190416666667" ixy="0" ixz="0" iyy="0.0001904" iyz="0" izz="0.00036"/>
+  <link
+    name="left_wheel_link">
+    <inertial>
+      <origin
+        xyz="-2.30989671834436E-11 0.00928468581982521 -1.50314066749146E-11"
+        rpy="0 0 0" />
+      <mass
+        value="0.016863123349881" />
+      <inertia
+        ixx="5.00210613971604E-06"
+        ixy="-3.45568268742638E-15"
+        ixz="7.56287498158743E-16"
+        iyy="7.63915210910664E-06"
+        iyz="-1.99682563661997E-15"
+        izz="5.00210614245866E-06" />
     </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://wheel_robot/meshes/left_wheel_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.2 0.2 0.2 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://wheel_robot/meshes/left_wheel_link.STL" />
+      </geometry>
+    </collision>
   </link>
-    
-  <joint name="caster_joint" type="fixed">
-      <parent link="base_link" />
-      <child link="caster_link" />
-      <origin xyz="0.06 0.0 -0.076" />
-      <axis xyz="0 1 0" />
+  <joint
+    name="left_wheel_joint"
+    type="continuous">
+    <origin
+      xyz="0 0.0655 0.0259589732744433"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="left_wheel_link" />
+    <axis
+      xyz="0 1 0" />
+  </joint>
+  <link
+    name="right_wheel_link">
+    <inertial>
+      <origin
+        xyz="2.67317626367891E-11 -0.0092846858828102 -1.4379178403523E-11"
+        rpy="0 0 0" />
+      <mass
+        value="0.0168631232190387" />
+      <inertia
+        ixx="5.00210613051693E-06"
+        ixy="-3.69005300943123E-15"
+        ixz="1.05253030042746E-15"
+        iyy="7.63915210593555E-06"
+        iyz="2.36224078811371E-15"
+        izz="5.00210612986154E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://wheel_robot/meshes/right_wheel_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.2 0.2 0.2 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://wheel_robot/meshes/right_wheel_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="right_wheel_joint"
+    type="continuous">
+    <origin
+      xyz="0 -0.0655 0.0259589732744432"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="right_wheel_link" />
+    <axis
+      xyz="0 -1 0" />
   </joint>
 
+  <gazebo>
+    <plugin name='diff_drive' filename='libgazebo_ros_diff_drive.so'>
+      <ros>
+        <namespace>/</namespace>
+        <remapping>cmd_vel:=cmd_vel</remapping> <!-- 控制话题，默认 /cmd_vel -->
+        <remapping>odom:=odom</remapping> <!-- 里程计发布话题 -->
+      </ros>
+      <update_rate>30</update_rate> <!-- 发布速率（单位：Hz），可选 -->
+      <!-- wheels --> <!-- 左右轮子链接名，需与你的 URDF 保持一致 -->
+      <left_joint>left_wheel_joint</left_joint>
+      <right_joint>right_wheel_joint</right_joint>
+      <!-- kinematics -->
+      <wheel_separation>0.174</wheel_separation> <!-- 轮距：左轮和右轮之间的距离（单位：米） -->
+      <wheel_diameter>0.026</wheel_diameter> <!-- 轮子半径（单位：米） -->
+      <!-- limits -->
+      <max_wheel_torque>20</max_wheel_torque>
+      <max_wheel_acceleration>1.0</max_wheel_acceleration>
+      <!-- output -->
+      <publish_odom>true</publish_odom>
+      <publish_odom_tf>true</publish_odom_tf>
+      <publish_wheel_tf>false</publish_wheel_tf> <!-- 发布里程计 TF（True/False） -->
+      <odometry_frame>odom</odometry_frame> <!-- 发布里程计变换 -->
+      <robot_base_frame>base_link</robot_base_frame> <!-- 机器人底盘的参考连杆 -->
+    </plugin>
+    <plugin name="joint_state" filename="libgazebo_ros_joint_state_publisher.so">
+      <ros>
+        <remapping>~/out:=joint_states</remapping>
+      </ros>
+      <update_rate>30</update_rate>
+      <joint_name>left_wheel_joint</joint_name>
+      <joint_name>right_wheel_joint</joint_name>
+    </plugin>
+  </gazebo>
+  <gazebo reference="imu_link">
+    <sensor name="imu_sensor" type="imu">
+    <plugin filename="libgazebo_ros_imu_sensor.so" name="imu">
+        <ros>
+          <namespace>/</namespace>
+          <remapping>~/out:=imu</remapping>
+        </ros>
+        <initial_orientation_as_reference>false</initial_orientation_as_reference>
+      </plugin>
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <visualize>true</visualize>
+      <imu>
+        <angular_velocity>
+          <x>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>2e-4</stddev>
+              <bias_mean>0.0000075</bias_mean>
+              <bias_stddev>0.0000008</bias_stddev>
+            </noise>
+          </x>
+          <y>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>2e-4</stddev>
+              <bias_mean>0.0000075</bias_mean>
+              <bias_stddev>0.0000008</bias_stddev>
+            </noise>
+          </y>
+          <z>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>2e-4</stddev>
+              <bias_mean>0.0000075</bias_mean>
+              <bias_stddev>0.0000008</bias_stddev>
+            </noise>
+          </z>
+        </angular_velocity>
+        <linear_acceleration>
+          <x>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>1.7e-2</stddev>
+              <bias_mean>0.1</bias_mean>
+              <bias_stddev>0.001</bias_stddev>
+            </noise>
+          </x>
+          <y>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>1.7e-2</stddev>
+              <bias_mean>0.1</bias_mean>
+              <bias_stddev>0.001</bias_stddev>
+            </noise>
+          </y>
+          <z>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>1.7e-2</stddev>
+              <bias_mean>0.1</bias_mean>
+              <bias_stddev>0.001</bias_stddev>
+            </noise>
+          </z>
+        </linear_acceleration>
+      </imu>
+    </sensor>
+  </gazebo>
+  <gazebo reference="laser_link">
+    <sensor name="laser_sensor" type="ray">
+    <always_on>true</always_on>
+    <visualize>true</visualize>
+    <update_rate>5</update_rate>
+    <pose>0 0 0.075 0 0 0</pose>
+    <ray>
+        <scan>
+          <horizontal>
+            <samples>360</samples>
+            <resolution>1.000000</resolution>
+            <min_angle>0.000000</min_angle>
+            <max_angle>6.280000</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.120000</min>
+          <max>3.5</max>
+          <resolution>0.015000</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+    </ray>
+    <plugin name="laserscan" filename="libgazebo_ros_ray_sensor.so">
+      <ros>
+        <remapping>~/out:=scan</remapping>
+      </ros>
+      <output_type>sensor_msgs/LaserScan</output_type>
+      <frame_name>laser_link</frame_name>
+    </plugin>
+    </sensor>
+  </gazebo>
 </robot>

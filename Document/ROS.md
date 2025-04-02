@@ -1,6 +1,10 @@
 
 ## ROS2 基础
 
+### 安装ROS2
+
+```wget http://fishros.com/install -O fishros && bash fishros```
+
 ### 创建工作空间和功能包
 ##### 创建工作空间
 ```mkdir -p xxx_ws/src && cd xxx_ws/src```
@@ -64,3 +68,7 @@ colcon build
 | **查看 ROS2 配置详细信息**  | `ros2 config list`                                         |
 | **查看 ROS2 配置项**        | `ros2 config get /node_name /param_name`                   |
 | **设置 ROS2 配置项**        | `ros2 config set /node_name /param_name value`             |
+
+查看 TF 树
+```ros2 run rqt_tf_tree rqt_tf_tree```
+

@@ -14,17 +14,6 @@ def generate_launch_description():
         }],
     )
 
-    # 添加静态 TF 变换 (odom 在 base_link 正上方 10cm)
-    tf_static_node = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='static_tf_pub_odom',
-        arguments=['0', '0', '0.1',  # x, y, z -> (0, 0, 0.1)
-                   '0', '0', '0', '1',  # 四元数 (qx, qy, qz, qw)
-                   'base_link', 'odom'],  # 父坐标系 base_link，子坐标系 odom
-    )
-
     return LaunchDescription([
         odrive_node,
-        tf_static_node,
     ])

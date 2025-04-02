@@ -64,7 +64,7 @@ Visualization Manager:
       Position Transformer: XYZ
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.10000000149011612
+      Size (m): 0.02
       Style: Flat Squares
       Topic:
         Depth: 5
@@ -78,7 +78,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: laser
+    Fixed Frame: laser_link
     Frame Rate: 30
   Name: root
   Tools:

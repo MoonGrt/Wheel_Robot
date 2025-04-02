@@ -3,6 +3,7 @@ from rclpy.node import Node
 from serial import Serial
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Pose, Twist, Point, Quaternion
+from sensor_msgs.msg import JointState
 from tf2_ros import TransformBroadcaster
 from geometry_msgs.msg import TransformStamped
 
@@ -13,8 +14,9 @@ class ODriveOdometryNode(Node):
         # 创建发布者
         self.odom_frame_id = 'odom'
         self.child_frame_id = 'base_link'
-        # self.odom_tf = TransformBroadcaster(self)
+        self.odom_tf = TransformBroadcaster(self)
         self.odom_pub = self.create_publisher(Odometry, 'odom', 10)
+        self.joint_pub = self.create_publisher(JointState, 'joint_states', 10)
 
         # 机器人物理参数
         self.x = 0.0
@@ -80,16 +82,17 @@ class ODriveOdometryNode(Node):
             self.y = d * math.sin(self.theta)
 
 
-            # # 发布TransformStamped消息
-            # odom_trans = TransformStamped()
-            # odom_trans.header.stamp = self.get_clock().now().to_msg()
-            # odom_trans.header.frame_id = self.odom_frame_id
-            # odom_trans.child_frame_id = self.child_frame_id
-            # # 设置位置和姿态
-            # odom_trans.transform.translation.x = self.x
-            # odom_trans.transform.translation.y = self.y
-            # odom_trans.transform.rotation.w = math.cos(self.theta / 2)
-            # odom_trans.transform.rotation.z = math.sin(self.theta / 2)
+            # 发布TransformStamped消息
+            odom_trans = TransformStamped()
+            odom_trans.header.stamp = self.get_clock().now().to_msg()
+            odom_trans.header.frame_id = self.odom_frame_id
+            odom_trans.child_frame_id = self.child_frame_id
+            # 设置位置和姿态
+            odom_trans.transform.translation.x = self.x
+            odom_trans.transform.translation.y = self.y
+            odom_trans.transform.rotation.w = math.cos(self.theta / 2)
+            odom_trans.transform.rotation.z = math.sin(self.theta / 2)
+            self.odom_tf.sendTransform(odom_trans)
 
             # 创建Odometry消息
             odom_msg = Odometry()
@@ -103,11 +106,17 @@ class ODriveOdometryNode(Node):
             )
             odom_msg.twist.twist.linear.x = linear_velocity
             odom_msg.twist.twist.angular.z = angular_velocity
-
-            # 发布消息
             self.odom_pub.publish(odom_msg)
-            # 发布 tf 变换
-            # self.odom_tf.sendTransform(odom_trans)
+
+            # 发布 JointStates
+            joint_msg = JointState()
+            joint_msg.header.stamp = self.get_clock().now().to_msg()
+            joint_msg.name = ["left_wheel_joint", "right_wheel_joint"]
+            joint_msg.position = [pos0 * 2 * math.pi, pos1 * 2 * math.pi]  # 轮子旋转角度
+            joint_msg.velocity = [vel0, vel1]  # 轮子速度
+            self.joint_pub.publish(joint_msg)
+            self.joint_pub.publish(joint_msg)
+
             # self.get_logger().info(f"x: {self.x:.10f}, y: {self.y:.10f}, theta: {self.theta:.10f}")
 
 

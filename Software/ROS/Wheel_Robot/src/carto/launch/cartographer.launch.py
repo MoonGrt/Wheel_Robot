@@ -17,10 +17,11 @@ def generate_launch_description():
     # 地图的发布周期
     publish_period_sec = LaunchConfiguration('publish_period_sec', default='1.0')
     # 配置文件夹路径
-    configuration_directory = LaunchConfiguration('configuration_directory',default= os.path.join(pkg_share, 'config') )
+    configuration_directory = LaunchConfiguration('configuration_directory',default= os.path.join(pkg_share, 'config'))
     # 配置文件
-    configuration_basename = LaunchConfiguration('configuration_basename', default='2d.lua')
-
+    configuration_basename = LaunchConfiguration('configuration_basename', default='carto.lua')
+    # rviz 配置文件
+    rviz_config_file = os.path.join(pkg_share, 'config','carto.rviz')
     
     #=====================声明三个节点，cartographer/occupancy_grid_node/rviz_node=================================
     cartographer_node = Node(
@@ -44,7 +45,7 @@ def generate_launch_description():
         package='rviz2',
         executable='rviz2',
         name='rviz2',
-        # arguments=['-d', rviz_config_dir],
+        arguments=['-d', rviz_config_file],
         parameters=[{'use_sim_time': use_sim_time}],
         output='screen')
 

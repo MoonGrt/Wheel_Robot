@@ -11,7 +11,6 @@ from launch.actions import DeclareLaunchArgument
 def generate_launch_description():
     package_name = 'wheel_robot'
     urdf_name = "wheel_robot.urdf"
-    ld = LaunchDescription()
     pkg_share = FindPackageShare(package=package_name).find(package_name) 
     urdf_model_path = os.path.join(pkg_share, f'urdf/{urdf_name}')
     robot_state_publisher_node = Node(
@@ -19,12 +18,7 @@ def generate_launch_description():
         executable='robot_state_publisher',
         arguments=[urdf_model_path]
         )
-    joint_state_publisher_node = Node(
-        package='joint_state_publisher_gui',
-        executable='joint_state_publisher_gui',
-        name='joint_state_publisher_gui',
-        arguments=[urdf_model_path]
-        )
+
 
     # Odom
     odom_node = Node(
@@ -37,14 +31,7 @@ def generate_launch_description():
             'baudrate': '921600',
         }],
     )
-    odom_tf2_node = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='static_tf_pub_odom',
-        arguments=['0', '0', '0',  # x, y, z -> (0, 0, 0)
-                   '0', '0', '0', '1',  # 四元数 (qx, qy, qz, qw)
-                   'base_link', 'odom'],  # 父坐标系 base_link，子坐标系 odom
-    )
+
 
     # IMU
     imu_node = Node(
@@ -57,14 +44,7 @@ def generate_launch_description():
             {'baudrate': '921600'}
         ]
     )
-    imu_tf2_node = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='static_tf_pub_imu',
-        arguments=['0', '0', '0.2',  # 位置 (x, y, z) -> (0, 0, 0.2)
-                    '0', '0', '0', '1',  # 旋转 (四元数 qx, qy, qz, qw) -> (0, 0, 0, 1)
-                    'base_link', 'imu']  # 父坐标系 'base_link'，子坐标系 'imu'
-    )
+
 
     # YDlidar
     share_dir = get_package_share_directory('ydlidar')
@@ -81,24 +61,12 @@ def generate_launch_description():
                                 parameters=[parameter_file],
                                 node_namespace='/',
                                 )
-    ydlidar_tf2_node = Node(
-        package='tf2_ros',  # 指定使用 tf2_ros 包
-        node_executable='static_transform_publisher',  # 运行 static_transform_publisher 可执行文件
-        node_name='static_tf_pub_laser',  # 该节点的名称
-        arguments=['0', '0', '0.04',  # 位置 (x, y, z) -> (0, 0, 0.04)
-                '0', '0', '0', '1',  # 旋转 (四元数 qx, qy, qz, qw) -> (0, 0, 0, 1) (即无旋转)
-                'base_link', 'laser'],  # 父坐标系 'base_link'，子坐标系 'laser'
-    )
 
 
     return LaunchDescription([
         robot_state_publisher_node,
-        # joint_state_publisher_node,
         odom_node,
-        odom_tf2_node,
         imu_node,
-        imu_tf2_node,
         ydlidar_params,
         ydlidar_node,
-        ydlidar_tf2_node,
     ])
