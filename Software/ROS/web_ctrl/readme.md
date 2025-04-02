@@ -9,7 +9,7 @@ ros2 run rosbridge_server rosbridge_websocket
 > 启动后, 将在本地 WebSocket 服务器的 9090 端口上启动 rosbridge_websocket
 
 ### 启用服务
-在 Web1 目录使用 python 来新建一个服务器：
+在目录使用 python 来新建一个服务器：
 ```python3 -m http.server 8000```
 
 ### 访问服务

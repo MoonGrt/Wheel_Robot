@@ -1,0 +1,1 @@
+官网搬运，用于cp210x 修改 pid vid 序列号等参数，CP210xSetIDs是v3.0最新版

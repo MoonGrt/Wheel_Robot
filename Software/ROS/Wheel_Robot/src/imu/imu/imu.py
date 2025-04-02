@@ -144,7 +144,8 @@ class IMUDriverNode(Node):
         try:
             imu = serial.Serial(port=port_name, baudrate=baudrate, timeout=0.5)
             if imu.isOpen():
-                self.get_logger().info("\033[32mSerial port opened successfully...\033[0m")
+                self.get_logger().info("\033[32mIMU serial port connection establised...\033[0m")
+                self.get_logger().info("\033[32mIMU Node started...\033[0m")
             else:
                 imu.open()
                 self.get_logger().info("\033[32mSerial port opened successfully...\033[0m")
