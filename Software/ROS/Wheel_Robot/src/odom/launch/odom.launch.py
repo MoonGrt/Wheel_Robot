@@ -8,10 +8,6 @@ def generate_launch_description():
         executable='odom',  # 替换为实际的可执行文件名
         name='odrive_node',
         output='screen',
-        parameters=[{
-            'port': '/dev/odrive_uart',
-            'baudrate': '921600',
-        }],
     )
 
     return LaunchDescription([

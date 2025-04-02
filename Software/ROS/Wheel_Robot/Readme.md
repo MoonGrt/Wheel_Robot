@@ -34,8 +34,10 @@ ros2 launch carto cartographer.launch.py
 sudo chmod 777 src/imu/bind_usb.sh
 sudo sh src/imu/bind_usb.sh
 ```
-> 重新插拔连接 IMU 模块的USB数据线, 输入以下指令检测绑定端口是否成功:
+> 输入以下指令, 强制 udev 重新加载, 并测绑定端口是否成功:
 ```
+sudo udevadm control --reload-rules
+sudo udevadm trigger
 ll /dev/imu
 ```
 #### 运行 imu 节点
@@ -54,8 +56,10 @@ ros2 launch imu imu.launch.py
 sudo chmod 777 src/ydlidar/bind_usb.sh
 sudo sh src/ydlidar/bind_usb.sh
 ```
-> 重新插拔连接 YDlidar 模块的USB数据线, 输入以下指令检测绑定端口是否成功:
+> 输入以下指令, 强制 udev 重新加载, 并测绑定端口是否成功:
 ```
+sudo udevadm control --reload-rules
+sudo udevadm trigger
 ll /dev/ydlidar
 ```
 #### 运行 ydlidar 节点
@@ -67,14 +71,20 @@ ros2 launch ydlidar ydlidar.launch.py
 
 ### odom
 #### 绑定 odrive USB设备
+> 如果是用虚拟机usb连接Odribe则可以绑定usb; Raspberry Pi 用引脚UART连接则不需要
 > 连接上 odrive 后，运行以下命令绑定 odrive USB设备。
 ```
 sudo chmod 777 src/odom/bind_usb.sh
 sudo sh src/odom/bind_usb.sh
+```
+> 输入以下指令, 强制 udev 重新加载, 并测绑定端口是否成功:
+```
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+ll /dev/odrive_uart
 ```
 #### 运行 odom 节点
 ```
 source install/setup.bash
 ros2 run odom odom
 ```
-

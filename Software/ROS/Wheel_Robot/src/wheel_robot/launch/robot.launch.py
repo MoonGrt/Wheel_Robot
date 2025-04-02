@@ -26,10 +26,6 @@ def generate_launch_description():
         executable='odom',
         name='odom_node',
         output='screen',
-        parameters=[{
-            'port': '/dev/odrive_uart',
-            'baudrate': '921600',
-        }],
     )
 
 
@@ -39,10 +35,6 @@ def generate_launch_description():
         executable='imu',
         name='imu_node',
         output='screen',
-        parameters=[
-            {'port': '/dev/imu'},
-            {'baudrate': '921600'}
-        ]
     )
 
 

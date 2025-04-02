@@ -122,7 +122,8 @@ class ODriveOdometryNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    odrive_node = ODriveOdometryNode("/dev/odrive_uart", 921600)
+    # odrive_node = ODriveOdometryNode("/dev/odrive_uart", 921600)  # Ubuntu
+    odrive_node = ODriveOdometryNode("/dev/ttyAMA0", 921600)  # Raspberry Pi
 
     # 运行 ROS2 节点
     try:

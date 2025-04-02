@@ -8,10 +8,6 @@ def generate_launch_description():
         executable='imu',
         name='imu_node',
         output='screen',
-        parameters=[
-            {'port': '/dev/imu'},
-            {'baudrate': '921600'}
-        ]
     )
 
     tf2_node = Node(
