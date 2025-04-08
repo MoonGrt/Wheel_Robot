@@ -4,11 +4,6 @@
 ### 安装ROS2
 ```wget http://fishros.com/install -O fishros && bash fishros```
 
-### 寻找IP地址
-- 屏幕终端查询
-- Advanced_IP_Scanner
-- cmd 输入 ```ping raspberrypi.local``` ("raspberrypi"是树莓派的主机名)
-
 ### 创建工作空间和功能包
 ##### 创建工作空间
 ```mkdir -p xxx_ws/src && cd xxx_ws/src```

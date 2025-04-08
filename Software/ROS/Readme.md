@@ -1,16 +1,16 @@
 
 ## Raspberry Pi 4 ROS2 Set
 
-### 寻找树莓派IP地址
-`ping raspberrypi.local`
+### 寻找IP地址
+- 屏幕终端查询
+- Advanced_IP_Scanner
+- cmd 输入 ```ping raspberrypi.local``` ("raspberrypi"是树莓派的主机名)
 
 ### 安装 ubuntu 20.04
 
 ### WIFI 配置
 - Step1: 编辑文件: `sudo nano /etc/netplan/50-cloud-init.yaml`
-
     > 注意格式，不要有多余的空格(2个空格的缩进)
-
     ```
     network:
       version: 2
@@ -35,16 +35,27 @@
 ### 安装 ROS2 Foxy
 `wget http://fishros.com/install -O fishros && bash fishros`
 
-### 安装 YDLidar-SDK
-解压YDLidar-SDK-master.tar.xz, 在解压后的文件夹中, 执行:
+### 安装 tf_transformations
+```bash
+sudo pip3 install transforms3d
+sudo apt-get install ros-foxy-tf-transformations
 ```
-mkdir build
-cd build
-cmake ..
-make -j4
-sudo make install
-```
-> 然后就可以删除该文件夹
+
+### 安装 python 库
+- 模糊PID控制库: `pip install scipy scikit-fuzzy networkx`
+
+
+### 安装 Odrive
+- `pip install odrive`
+- 添加环境: 
+    ```
+    echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.bashrc
+    source ~/.bashrc
+    ```
+- 设备权限: 
+    ```bash
+    sudo bash -c "curl https://cdn.odriverobotics.com/files/odrive-udev-rules.rules > /etc/udev/rules.d/91-odrive.rules && udevadm control --reload-rules && udevadm trigger"
+    ```
 
 ### Issues
 #### 1. Odrive 和 Raspberry 连接，导致 Raspberry 无法进入系统
@@ -76,4 +87,6 @@ sudo make install
     - 添加: `dtoverlay=disable-bt`
   - bash运行: `sudo systemctl disable bluetooth`
     <!-- - 进入root用户，bash运行: `sudo su` -->
+
+
 
