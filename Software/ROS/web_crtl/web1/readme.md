@@ -3,14 +3,16 @@
 ### 准备工作
 安装并启动rosbridge_server的rosbridge_websocket插件：
 ```bash
-sudo apt install ros-$ROS_DISTRO-rosbridge-suite 
+sudo apt install ros-$ROS_DISTRO-rosbridge-suite
 ros2 run rosbridge_server rosbridge_websocket
 ```
 > 启动后, 将在本地 WebSocket 服务器的 9090 端口上启动 rosbridge_websocket
 
 ### 启用服务
 在目录使用 python 来新建一个服务器：
-```python3 -m http.server 8000```
+```bash
+python3 -m http.server 8000
+```
 
 ### 访问服务
 本机访问: [localhost:8000](http://localhost:8000/)
