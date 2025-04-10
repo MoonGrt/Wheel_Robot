@@ -1,5 +1,4 @@
 <html>
-
 <head>
     <meta charset="UTF-8">
     <title>lib_robot</title>
@@ -17,11 +16,10 @@
         // Create the main viewer.
         var viewer = new ROS3D.Viewer({
             divID: 'map',
-            width: 1500,
+            width: 1000,
             height: 500,
             antialias: true
         });
-
         // Setup the marker client.
         var gridClient = new ROS3D.OccupancyGridClient({
             ros: ros,
@@ -34,7 +32,7 @@
 <body onload="init()">
     <div id="app" class="container">
         <div class="jumbotron">
-            <h1>Welcome to lib_robot panel!!! </h1>
+            <h1>Wheel Robot Web Controll Panel</h1>
         </div>
 
         <div class="row" style="max-height:200px;">
@@ -60,9 +58,6 @@
         <hr>
 
         <div class="row">
-            <div class="col-md-12 text-center">
-                <h5>构建地图</h5>
-            </div>
             <!-- 1st row -->
             <div class="col-md-12 text-center">
                 <button @click="forward" :disabled="loading || !connected" class="btn btn-primary">Go forward</button>
@@ -88,7 +83,7 @@
     </div>
 
     <script type="text/javascript" src="main.js"></script>
-    <div id="map"></div>
+    <div id="map" style="width: 1000px; height: 500px; margin: 0 auto;"></div>
 </body>
 
 </html>
