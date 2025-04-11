@@ -7,7 +7,7 @@
     <script type="text/javascript" src="roslib.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
     <script type="text/javascript" src="ros3d.js"></script>
-    <script src="joy.js"></script>
+    <script type="text/javascript" src="joy.js"></script>
 </head>
 <script>
     function init() {
@@ -28,23 +28,13 @@
             continuous: true
         });
         // Create JoyStick object.
-        var joy = new JoyStick('joyDiv');
-        document.getElementById('joyDiv').addEventListener('mousemove', updateData);
-        document.getElementById('joyDiv').addEventListener('touchmove', updateData);
-        function updateData() {
-            document.getElementById("posizioneX").value = joy.GetPosX();
-            document.getElementById("posizioneY").value = joy.GetPosY();
-            document.getElementById("direzione").value = joy.GetDir();
-            document.getElementById("X").value = joy.GetX();
-            document.getElementById("Y").value = joy.GetY();
-        }
+        // var joy = new JoyStick('joyDiv');  // 在main.js中定义
     }
 </script>
 
 <body onload="init()">
     <div id="map" style="width: 800px; height: 400px; margin: 0 auto;"></div>
 
-    <!-- Vue 根元素只留一个 -->
     <div id="app">
         <div style="display: flex; justify-content: center; align-items: flex-start; gap: 30px; margin-top: 30px;">
             <!-- 左：控制按钮 -->

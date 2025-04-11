@@ -67,5 +67,28 @@ var app = new Vue({
         },
     },
     mounted() {
+        var joy = new JoyStick('joyDiv')
+        const joyDiv = document.getElementById('joyDiv')
+
+        const updateAndSend = () => {
+            const now = Date.now()
+            if (now - this.lastSendTime < 100) return // 限制发送频率（每100ms一次）
+            this.lastSendTime = now
+
+            const x = joy.GetX() / 200 // 范围大概是 [-1, 1]
+            const y = joy.GetY() / 200
+
+            // 线速度与Y方向相反（向上是负Y）
+            const linear = y * 0.5
+            const angular = x * 0.5
+
+            console.log(linear, angular)
+            if (this.connected) {
+                this.move(linear, angular)
+            }
+        }
+
+        joyDiv.addEventListener('mousemove', updateAndSend)
+        joyDiv.addEventListener('touchmove', updateAndSend)
     },
 })
