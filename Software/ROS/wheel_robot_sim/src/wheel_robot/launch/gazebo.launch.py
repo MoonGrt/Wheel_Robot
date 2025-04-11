@@ -14,7 +14,7 @@ def generate_launch_description():
     pkg_share = FindPackageShare(package=package_name).find(package_name) 
     urdf_model_path = os.path.join(pkg_share, f'urdf/{urdf_name}')
     gazebo_urdf_model_path = os.path.join(pkg_share, f'urdf/gazebo_{urdf_name}')
-    gazebo_world_path = os.path.join(pkg_share, 'world/simulation.world')
+    gazebo_world_path = os.path.join(pkg_share, 'worlds/willowgarage.world')
 
     # 读取 URDF 文件并替换 package:// 路径为绝对路径
     with open(urdf_model_path, "r") as file:

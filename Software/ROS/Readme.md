@@ -87,6 +87,3 @@ sudo apt-get install ros-foxy-tf-transformations
     - 添加: `dtoverlay=disable-bt`
   - bash运行: `sudo systemctl disable bluetooth`
     <!-- - 进入root用户，bash运行: `sudo su` -->
-
-
-
