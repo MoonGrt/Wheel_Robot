@@ -10,10 +10,10 @@
     ```
     ```bash
     source install/setup.bash
-    ros2 launch fishbot_cartographer cartographer.launch.py 
+    ros2 launch fishbot_cartographer cartographer.launch.py
     ```
 - Step2. 启动rosbridge websocket
-  - `roslaunch rosbridge_server rosbridge_websocket.launch`
+  - `ros2 run rosbridge_server rosbridge_websocket`
 
 
 #### 网页部分

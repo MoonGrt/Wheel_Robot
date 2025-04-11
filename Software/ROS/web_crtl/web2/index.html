@@ -1,12 +1,13 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>lib_robot</title>
+    <title>Ctrl Panel</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
         integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <script type="text/javascript" src="roslib.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
     <script type="text/javascript" src="ros3d.js"></script>
+    <script src="joy.js"></script>
 </head>
 <script>
     function init() {
@@ -16,8 +17,8 @@
         // Create the main viewer.
         var viewer = new ROS3D.Viewer({
             divID: 'map',
-            width: 1000,
-            height: 500,
+            width: 800,
+            height: 400,
             antialias: true
         });
         // Setup the marker client.
@@ -26,64 +27,66 @@
             rootObject: viewer.scene,
             continuous: true
         });
+        // Create JoyStick object.
+        var joy = new JoyStick('joyDiv');
+        document.getElementById('joyDiv').addEventListener('mousemove', updateData);
+        document.getElementById('joyDiv').addEventListener('touchmove', updateData);
+        function updateData() {
+            document.getElementById("posizioneX").value = joy.GetPosX();
+            document.getElementById("posizioneY").value = joy.GetPosY();
+            document.getElementById("direzione").value = joy.GetDir();
+            document.getElementById("X").value = joy.GetX();
+            document.getElementById("Y").value = joy.GetY();
+        }
     }
 </script>
 
 <body onload="init()">
-    <div id="app" class="container">
-        <div class="jumbotron">
-            <h1>Wheel Robot Web Controll Panel</h1>
-        </div>
+    <div id="map" style="width: 800px; height: 400px; margin: 0 auto;"></div>
 
-        <div class="row" style="max-height:200px;">
-            <div class="col-md-6">
-                <h3>Connection status</h3>
-                <p class="text-danger" v-if="!connected">Not connected!</p>
-                <p class="text-success" v-if="connected">Connected!</p>
-                <label>Websocket server address</label>
-                <input type="text" v-model="ws_address" />
-                <br><br>
-                <button :disabled="loading" class="btn btn-danger" @click="disconnect"
-                    v-if="connected">Disconnect!</button>
-                <button :disabled="loading" class="btn btn-success" @click="connect" v-else>Connect!</button>
-            </div>
-            <div class="col-md-6" style="max-height:200px; overflow:auto;">
-                <h3>连接日记(logging_info)</h3>
-                <div>
-                    <p v-for="log of logs">{{ log }}</p>
+    <!-- Vue 根元素只留一个 -->
+    <div id="app">
+        <div style="display: flex; justify-content: center; align-items: flex-start; gap: 30px; margin-top: 30px;">
+            <!-- 左：控制按钮 -->
+            <div id="app">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <button @click="forward" :disabled="loading || !connected" class="btn btn-primary">Forward</button>
+                </div>
+                <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 20px;">
+                    <button @click="turnLeft" :disabled="loading || !connected" class="btn btn-primary">Left</button>
+                    <button @click="stop" :disabled="loading || !connected" class="btn btn-danger">Stop</button>
+                    <button @click="turnRight" :disabled="loading || !connected" class="btn btn-primary">Right</button>
+                </div>
+                <div style="text-align: center;">
+                    <button @click="backward" :disabled="loading || !connected" class="btn btn-primary">Backward</button>
                 </div>
             </div>
+
+            <!-- 中：连接状态 + 日志 -->
+            <div style="display: flex; gap: 20px; align-items: flex-start;">
+                <!-- 连接状态 -->
+                <div style="flex: 1; min-width: 200px;">
+                    <h4>Connection Status</h4>
+                    <label>Address</label>
+                    <input type="text" v-model="ws_address" class="form-control" />
+                    <p class="text-danger" v-if="!connected">Not connected!</p>
+                    <p class="text-success" v-if="connected">Connected!</p>
+                    <button :disabled="loading" class="btn btn-danger" @click="disconnect" v-if="connected">Disconnect!</button>
+                    <button :disabled="loading" class="btn btn-success" @click="connect" v-else>Connect!</button>
+                </div>
+                <!-- 日志区域 -->
+                <div style="flex: 1; min-width: 200px; max-height: 200px; overflow-y: auto; border-left: 1px solid #ccc; padding-left: 15px;">
+                    <h4>Logging Info</h4>
+                    <p v-for="log in logs" :key="log">{{ log }}</p>
+                </div>
+            </div>
+
+            <!-- 右：摇杆 -->
+            <div id="joyDiv" style="width:150px; height:150px;"></div>
         </div>
-
-        <hr>
-
-        <div class="row">
-            <!-- 1st row -->
-            <div class="col-md-12 text-center">
-                <button @click="forward" :disabled="loading || !connected" class="btn btn-primary">Go forward</button>
-                <br><br>
-            </div>
-            <!-- 2nd row -->
-            <div class="col-md-4 text-center">
-                <button @click="turnLeft" :disabled="loading || !connected" class="btn btn-primary">Turn left</button>
-            </div>
-            <div class="col-md-4 text-center">
-                <button @click="stop" :disabled="loading || !connected" class="btn btn-danger">Stop</button>
-                <br><br>
-            </div>
-            <div class="col-md-4 text-center">
-                <button @click="turnRight" :disabled="loading || !connected" class="btn btn-primary">Turn right</button>
-            </div>
-            <!-- 3rd row -->
-            <div class="col-md-12 text-center">
-                <button @click="backward" :disabled="loading || !connected" class="btn btn-primary">Go backward</button>
-            </div>
-        </div>
-
     </div>
 
     <script type="text/javascript" src="main.js"></script>
-    <div id="map" style="width: 1000px; height: 500px; margin: 0 auto;"></div>
 </body>
 
 </html>

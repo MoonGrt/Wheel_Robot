@@ -18,15 +18,15 @@ var app = new Vue({
                 url: this.ws_address
             })
             this.ros.on('connection', () => {
-                this.logs.unshift((new Date()).toTimeString() + ' - Connected!')
+                this.logs.unshift((new Date()).toLocaleTimeString('en-GB', { hour12: false }) + ' - Connected!')
                 this.connected = true
                 this.loading = false
             })
             this.ros.on('error', (error) => {
-                this.logs.unshift((new Date()).toTimeString() + ` - Error: ${error}`)
+                this.logs.unshift((new Date()).toLocaleTimeString('en-GB', { hour12: false }) + ` - Error: ${error}`)
             })
             this.ros.on('close', () => {
-                this.logs.unshift((new Date()).toTimeString() + ' - Disconnected!')
+                this.logs.unshift((new Date()).toLocaleTimeString('en-GB', { hour12: false }) + ' - Disconnected!')
                 this.connected = false
                 this.loading = false
             })
@@ -42,45 +42,28 @@ var app = new Vue({
                 messageType: 'geometry_msgs/Twist'
             })
         },
-        forward: function () {
+        move: function (linear, angular) {
             this.message = new ROSLIB.Message({
-                linear: { x: 1.5, y: 0, z: 0, },
-                angular: { x: 0, y: 0, z: 0, },
+                linear: { x: linear, y: 0, z: 0, },
+                angular: { x: 0, y: 0, z: angular, },
             })
             this.setTopic()
             this.topic.publish(this.message)
+        },
+        forward: function () {
+            this.move(0.5, 0)
         },
         stop: function () {
-            this.message = new ROSLIB.Message({
-                linear: { x: 0, y: 0, z: 0, },
-                angular: { x: 0, y: 0, z: 0, },
-            })
-            this.setTopic()
-            this.topic.publish(this.message)
+            this.move(0, 0)
         },
         backward: function () {
-            this.message = new ROSLIB.Message({
-                linear: { x: -1.5, y: 0, z: 0, },
-                angular: { x: 0, y: 0, z: 0, },
-            })
-            this.setTopic()
-            this.topic.publish(this.message)
+            this.move(-0.5, 0)
         },
         turnLeft: function () {
-            this.message = new ROSLIB.Message({
-                linear: { x: 0, y: 0, z: 0, },
-                angular: { x: 0, y: 0, z: 1.0, },
-            })
-            this.setTopic()
-            this.topic.publish(this.message)
+            this.move(0, 0.2)
         },
         turnRight: function () {
-            this.message = new ROSLIB.Message({
-                linear: { x: 0, y: 0, z: 0, },
-                angular: { x: 0, y: 0, z: -1.0, },
-            })
-            this.setTopic()
-            this.topic.publish(this.message)
+            this.move(0, -0.2)
         },
     },
     mounted() {

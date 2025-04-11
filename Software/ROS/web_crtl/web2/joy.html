@@ -8,36 +8,47 @@
             margin: 0px;
             padding: 0px;
         }
+
         #joystick {
             border: 1px solid #9C9898;
         }
     </style>
-    <script src="joy.js"></script>
+    <script src="joy.js"></script> <!-- 确保这个文件存在 -->
 </head>
 
 <body>
     <div id="joyDiv" style="width:200px;height:200px;margin-bottom:20px;margin:50px"></div>
 
-    Posizione X:<input id="posizioneX" type="text" /></br>
-    Posizione Y:<input id="posizioneY" type="text" /></br>
-    Direzione:<input id="direzione" type="text" /></br>
-    X :<input id="X" type="text" /></br>
+    Posizione X:<input id="posizioneX" type="text" /><br />
+    Posizione Y:<input id="posizioneY" type="text" /><br />
+    Direzione:<input id="direzione" type="text" /><br />
+    X :<input id="X" type="text" /><br />
     Y :<input id="Y" type="text" />
+
     <script type="text/javascript">
-        // Create JoyStick object into the DIV 'joyDiv'
+        // 创建 JoyStick 实例
         var joy = new JoyStick('joyDiv');
 
+        // 绑定 DOM 元素
         var inputPosX = document.getElementById("posizioneX");
         var inputPosY = document.getElementById("posizioneY");
         var direzione = document.getElementById("direzione");
         var x = document.getElementById("X");
         var y = document.getElementById("Y");
 
-        setInterval(function () { inputPosX.value = joy.GetPosX(); }, 50);
-        setInterval(function () { inputPosY.value = joy.GetPosY(); }, 50);
-        setInterval(function () { direzione.value = joy.GetDir(); }, 50);
-        setInterval(function () { x.value = joy.GetX(); }, 50);
-        setInterval(function () { y.value = joy.GetY(); }, 50);
+        // 更新数据函数
+        function updateData() {
+            inputPosX.value = joy.GetPosX();
+            inputPosY.value = joy.GetPosY();
+            direzione.value = joy.GetDir();
+            x.value = joy.GetX();
+            y.value = joy.GetY();
+        }
+
+        // 监听鼠标和触摸事件，只在用户操作时触发更新
+        const joyDiv = document.getElementById('joyDiv');
+        joyDiv.addEventListener('mousemove', updateData);
+        joyDiv.addEventListener('touchmove', updateData);
     </script>
 </body>
 
