@@ -8,6 +8,8 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 from odrive.enums import *
 from odrive.rich_text import RichText, Color, Style
+from PyQt5.QtGui import QIcon
+
 
 class ODriveGUI(QMainWindow):
     def __init__(self):
@@ -17,7 +19,8 @@ class ODriveGUI(QMainWindow):
         self.odrive_init()
 
         # 初始化界面
-        self.setWindowTitle("ODrive 运行控制")
+        self.setWindowTitle("PID Config")
+        self.setWindowIcon(QIcon('icons/config.svg'))
         self.resize(800, 600)
 
         # 主窗口布局
@@ -195,8 +198,8 @@ class ODriveGUI(QMainWindow):
         """ 创建模式选择按钮 """
         hbox = QHBoxLayout()
 
-        self.mode_velocity = QRadioButton("速度模式")
-        self.mode_position = QRadioButton("位置模式")
+        self.mode_velocity = QRadioButton("Speed")
+        self.mode_position = QRadioButton("Position")
         self.mode_velocity.setChecked(True)  # 默认位置模式
 
         self.mode_button_group = QButtonGroup(self)
@@ -224,7 +227,7 @@ class ODriveGUI(QMainWindow):
             self.odrive.axis0.requested_state = AxisState.IDLE
             self.current_axis = "axis1"
             print("切换到 **axis1**")
-        self.odrive_control_button.setText("启动")
+        self.odrive_control_button.setText("Start")
         self.odrive_control_button.setChecked(False)
         self.odrive_running = False
 
@@ -244,13 +247,13 @@ class ODriveGUI(QMainWindow):
         hbox = QHBoxLayout()
 
         # 目标值输入
-        self.target_label = QLabel("目标值:")
+        self.target_label = QLabel("Target:")
         self.target_input = QLineEdit()
-        self.target_button = QPushButton("运行")
+        self.target_button = QPushButton("Run")
         self.target_button.clicked.connect(self.run_odrive)
 
         # ODrive 运行控制按钮
-        self.odrive_control_button = QPushButton("启动")
+        self.odrive_control_button = QPushButton("Start")
         self.odrive_control_button.setCheckable(True)  # 允许按钮保持按下状态
         self.odrive_control_button.clicked.connect(self.toggle_odrive_state)
         self.odrive_running = False  # 初始状态
@@ -393,7 +396,7 @@ class ODriveGUI(QMainWindow):
         self.odrive.axis0.controller.input_vel = 0
         self.odrive.axis0.controller.input_pos = 0
         self.odrive.axis0.requested_state = AxisState.IDLE
-        self.odrive.axis1.controller.input_vel = 0 
+        self.odrive.axis1.controller.input_vel = 0
         self.odrive.axis1.controller.input_pos = 0
         self.odrive.axis1.requested_state = AxisState.IDLE
         event.accept()  # 允许窗口关闭

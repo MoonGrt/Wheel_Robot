@@ -81,6 +81,9 @@
         "xtr1common": "cpp",
         "bitset": "cpp",
         "numeric": "cpp",
-        "random": "cpp"
+        "random": "cpp",
+        "tim.h": "c",
+        "dma.h": "c",
+        "gpio.h": "c"
     }
 }
