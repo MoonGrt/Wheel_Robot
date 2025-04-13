@@ -1,7 +1,4 @@
-import sys
-import time
-import threading
-import odrive
+import sys, time, threading, odrive
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QSlider, QLabel, QWidget,
     QHBoxLayout, QRadioButton, QLineEdit, QPushButton, QButtonGroup
@@ -61,12 +58,12 @@ class ODriveGUI(QMainWindow):
 
     def odrive_init(self):
         try:
-            self.odrive = odrive.find_any(timeout=10)
+            self.odrive = odrive.find_any(timeout=5)
             print("Odrive Connected")
             self.odrive_setup()
             print("Motor Setup Successed")
         except Exception as e:
-            print(f"error: {str(e)}")
+            print(f"Odrive Connect Failed: {e}")
             raise
 
     def odrive_setup(self):

@@ -62,7 +62,7 @@ sudo apt-get install ros-foxy-tf-transformations
 - Step1. 禁用 UART 作为系统控制台
   - 编辑 cmdline.txt: `sudo nano /boot/firmware/cmdline.txt`
   - 移除 console=serial0,115200
-- Step2. 取消 u-boot 开机等待
+- Step2. 取消 u-boot 开机等待时间
   - 串口输入任意内容，进入 u-boot
   - 输入: `setenv bootdelay -2`
   - 保存: `saveenv`

@@ -78,6 +78,9 @@
         "xloctime": "cpp",
         "xmemory": "cpp",
         "xstddef": "cpp",
-        "xtr1common": "cpp"
+        "xtr1common": "cpp",
+        "bitset": "cpp",
+        "numeric": "cpp",
+        "random": "cpp"
     }
 }
