@@ -4,7 +4,7 @@
 
 ### wheel_robot
 #### 运行 wheel_robot 节点
-> 该 launch 文件同时运行robot, imu, ydlidar, odom节点
+> 该 launch 文件同时运行robot, imu, ydlidar, odom, web节点
 ```
 source install/setup.bash
 ros2 launch wheel_robot robot.launch.py
@@ -48,16 +48,6 @@ ros2 launch imu imu.launch.py
 
 
 ### ydlidar
-#### 安装SDK
-解压 document文件夹下的 YDLidar-SDK-master.tar.xz, 在该文件夹下打开终端, 输入:
-```
-mkdir build
-cd build
-cmake ..
-make -j4
-sudo make install
-```
-
 #### 绑定 ydlidar USB设备
 > 注意: imu 和 ydlidar 的USB-ID完全相同，因此使用CP210xSetIDs.exe工具将 ydlidar 的 serial 项 从默认的"0001"改为"0002"
 

@@ -9,6 +9,7 @@ from launch.actions import DeclareLaunchArgument
 
 
 def generate_launch_description():
+    # Robot
     package_name = 'wheel_robot'
     urdf_name = "wheel_robot.urdf"
     pkg_share = FindPackageShare(package=package_name).find(package_name) 
@@ -55,10 +56,19 @@ def generate_launch_description():
                                 )
 
 
+    # 使用 Node 启动 rosbridge_websocket
+    rosbridge_websocket_node = Node(
+        package='rosbridge_server',
+        executable='rosbridge_websocket',
+        name='rosbridge_websocket',
+        output='screen',
+    )
+
     return LaunchDescription([
         robot_state_publisher_node,
         odom_node,
         imu_node,
         ydlidar_params,
         ydlidar_node,
+        rosbridge_websocket_node,
     ])

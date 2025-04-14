@@ -1,4 +1,4 @@
-import sys, odrive
+import sys, odrive, time, threading
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton,
     QFormLayout, QLineEdit, QLabel, QScrollArea,
@@ -13,9 +13,9 @@ import matplotlib.pyplot as plt
 class ODriveReader(QWidget):
     def __init__(self):
         super().__init__()
-        self.odrv0 = None
+        self.odrive = None
         self.param_inputs = {}
-
+        self.odrive_init()
         self.initUI()
 
     def initUI(self):
@@ -30,6 +30,7 @@ class ODriveReader(QWidget):
         # 左侧布局（参数读取）
         top_controls = QHBoxLayout()
         bottom_controls = QHBoxLayout()
+        load_store_controls = QHBoxLayout()
 
         # 添加读写按钮
         self.button_read = QPushButton('Read', self)
@@ -45,6 +46,13 @@ class ODriveReader(QWidget):
         self.button_reboot = QPushButton('Reboot', self)
         self.button_reboot.clicked.connect(self.reboot)
         bottom_controls.addWidget(self.button_reboot)
+        # 添加保存恢复按钮
+        self.button_save = QPushButton('Save', self)
+        self.button_save.clicked.connect(self.save_config)
+        load_store_controls.addWidget(self.button_save)
+        self.button_load = QPushButton('Load', self)
+        self.button_load.clicked.connect(self.load_config)
+        load_store_controls.addWidget(self.button_load)
 
         # 模式选择按钮组
         self.mode_group = QButtonGroup(self)
@@ -67,21 +75,40 @@ class ODriveReader(QWidget):
         left_layout.addLayout(top_controls)
         left_layout.addWidget(self.top_tabs)
         left_layout.addLayout(bottom_controls)
+        left_layout.addLayout(load_store_controls)
 
         # 右侧布局（图形）
-        self.current_figure, self.current_ax = plt.subplots()
-        self.current_canvas = FigureCanvas(self.current_figure)
-        right_layout.addWidget(self.current_canvas)
-
         self.voltage_figure, self.voltage_ax = plt.subplots()
         self.voltage_canvas = FigureCanvas(self.voltage_figure)
         right_layout.addWidget(self.voltage_canvas)
+        self.temperature_figure, self.temperature_ax = plt.subplots()
+        self.temperature_canvas = FigureCanvas(self.temperature_figure)
+        right_layout.addWidget(self.temperature_canvas)
 
+        # 记录数据（分别存储位置和速度数据）
+        self.start_time = time.time()
+        self.max_data_points = 500
+        self.time = []
+        self.y_vol_data, self.y_tem_data = [], []
 
         # 整体布局
         main_layout.addLayout(left_layout, 1)
         main_layout.addLayout(right_layout, 1)
         self.setLayout(main_layout)
+
+        # 启动绘图线程
+        self.running = True
+        self.plot_thread = threading.Thread(target=self.update_plot, daemon=True)
+        self.plot_thread.start()
+
+        self.read_odrive_params()
+
+    def odrive_init(self):
+        try:
+            self.odrive = odrive.find_any(timeout=5)
+            print("Odrive Connected")
+        except Exception as e:
+            print(f"Odrive Connect Failed: {e}")
 
     def get_allowed_prefixes(self):
         if self.radio_full.isChecked():
@@ -93,21 +120,26 @@ class ODriveReader(QWidget):
         return None
 
     def calibrate(self):
-        self.odrv0.axis0.requested_state = 3
-        self.odrv0.axis1.requested_state = 3
+        self.odrive.axis0.requested_state = 3
+        self.odrive.axis1.requested_state = 3
 
     def reboot(self):
-        self.odrv0.reboot()
+        self.odrive.reboot()
+
+    def save_config(self):
+        pass
+
+    def load_config(self):
+        pass
 
     def read_odrive_params(self):
-        self.odrv0 = odrive.find_any()
         self.param_inputs.clear()
         self.top_tabs.clear()
 
         allowed_prefixes = self.get_allowed_prefixes()
 
         all_params = {}
-        self.collect_params(self.odrv0, all_params, allowed_prefixes=allowed_prefixes)
+        self.collect_params(self.odrive, all_params, allowed_prefixes=allowed_prefixes)
 
         # 根据前两级路径分组
         grouped = {}
@@ -189,7 +221,7 @@ class ODriveReader(QWidget):
         for path, input_widget in self.param_inputs.items():
             try:
                 new_value = input_widget.text()
-                self.set_odrive_param(self.odrv0, path, new_value)
+                self.set_odrive_param(self.odrive, path, new_value)
             except Exception as e:
                 print(f"设置失败: {path} = {new_value} - 错误: {e}")
 
@@ -213,6 +245,31 @@ class ODriveReader(QWidget):
             setattr(target, attr, new_value)
         except Exception as e:
             raise ValueError(f"类型转换失败: {e}")
+
+    def update_plot(self):
+        """ 实时更新 Matplotlib 图像 """
+        while self.running and self.odrive:
+            elapsed_time = time.time() - self.start_time
+            self.time.append(elapsed_time)
+
+            self.y_vol_data.append(self.odrive.vbus_voltage)
+            self.y_tem_data.append(self.odrive.axis0.motor.fet_thermistor.temperature)
+
+            if len(self.time) > self.max_data_points:
+                self.time.pop(0)
+                self.y_vol_data.pop(0)
+                self.y_tem_data.pop(0)
+
+            self.voltage_ax.clear()
+            self.voltage_ax.plot(self.time, self.y_vol_data, 'r-')
+            self.voltage_canvas.draw()
+
+            self.temperature_ax.clear()
+            self.temperature_ax.plot(self.time, self.y_tem_data, 'b-')
+            self.temperature_canvas.draw()
+
+            time.sleep(0.01)
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

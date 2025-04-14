@@ -14,6 +14,7 @@ from PyQt5.QtGui import QIcon
 class ODriveGUI(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.odrive = None
 
         # 连接 ODrive
         self.odrive_init()
@@ -67,7 +68,6 @@ class ODriveGUI(QMainWindow):
             print("Motor Setup Successed")
         except Exception as e:
             print(f"Odrive Connect Failed: {e}")
-            raise
 
     def odrive_setup(self):
         # 配置输入模式和控制模式
@@ -170,6 +170,9 @@ class ODriveGUI(QMainWindow):
 
     def motor_calibration(self, name):
         # 启动编码器偏移校准
+        if self.odrive is None:
+            return
+
         if name == 'axis0':
             self.odrive.axis0.requested_state = AxisState.ENCODER_OFFSET_CALIBRATION
         elif name == 'axis1':
@@ -215,6 +218,9 @@ class ODriveGUI(QMainWindow):
 
     def update_axis(self):
         """ 更新轴 """
+        if self.odrive is None:
+            return
+
         if self.mode_axis0.isChecked():
             self.odrive.axis1.controller.input_vel = 0
             self.odrive.axis1.controller.input_pos = 0
@@ -233,6 +239,9 @@ class ODriveGUI(QMainWindow):
 
     def update_mode(self):
         """ 更新控制模式，并修改采样对象 """
+        if self.odrive is None:
+            return
+
         if self.mode_position.isChecked():
             self.odrive.axis0.controller.config.control_mode = ControlMode.POSITION_CONTROL  # 位置模式
             self.current_mode = "position"
@@ -266,6 +275,9 @@ class ODriveGUI(QMainWindow):
 
     def run_odrive(self):
         """ 运行 ODrive 目标值 """
+        if self.odrive is None:
+            return
+
         if self.current_axis == "axis0":
             axis = self.odrive.axis0
         else:
@@ -284,6 +296,9 @@ class ODriveGUI(QMainWindow):
 
     def toggle_odrive_state(self):
         """ 启动/停止 ODrive CLOSED_LOOP_CONTROL """
+        if self.odrive is None:
+            return
+
         if self.current_axis == "axis0":
             axis = self.odrive.axis0
         else:
@@ -303,6 +318,9 @@ class ODriveGUI(QMainWindow):
 
     def create_sliders(self, layout):
         """ 创建滑块控件 """
+        if self.odrive is None:
+            return
+
         self.sliders = []
         self.labels = []
 
@@ -336,6 +354,9 @@ class ODriveGUI(QMainWindow):
 
     def update_param(self, index, value):
         """ 调整参数 """
+        if self.odrive is None:
+            return
+
         params = ["pos_gain", "vel_gain", "vel_integrator_gain"]
         param_name = params[index]
 
@@ -357,7 +378,7 @@ class ODriveGUI(QMainWindow):
 
     def update_plot(self):
         """ 实时更新 Matplotlib 图像 """
-        while self.running:
+        while self.running and self.odrive:
             elapsed_time = time.time() - self.start_time
 
             if self.current_axis == "axis0":
@@ -393,12 +414,13 @@ class ODriveGUI(QMainWindow):
 
     def closeEvent(self, event):
         """窗口关闭时，确保 ODrive 停止"""
-        self.odrive.axis0.controller.input_vel = 0
-        self.odrive.axis0.controller.input_pos = 0
-        self.odrive.axis0.requested_state = AxisState.IDLE
-        self.odrive.axis1.controller.input_vel = 0
-        self.odrive.axis1.controller.input_pos = 0
-        self.odrive.axis1.requested_state = AxisState.IDLE
+        if self.odrive:
+            self.odrive.axis0.controller.input_vel = 0
+            self.odrive.axis0.controller.input_pos = 0
+            self.odrive.axis0.requested_state = AxisState.IDLE
+            self.odrive.axis1.controller.input_vel = 0
+            self.odrive.axis1.controller.input_pos = 0
+            self.odrive.axis1.requested_state = AxisState.IDLE
         event.accept()  # 允许窗口关闭
 
 
