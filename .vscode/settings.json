@@ -84,6 +84,7 @@
         "random": "cpp",
         "tim.h": "c",
         "dma.h": "c",
-        "gpio.h": "c"
+        "gpio.h": "c",
+        "main.h": "c"
     }
 }

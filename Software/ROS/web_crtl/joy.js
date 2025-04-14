@@ -64,6 +64,8 @@ var JoyStick = (function (container, parameters) {
     // Create Canvas element and add it in the Container object
     var objContainer = document.getElementById(container);
     var canvas = document.createElement('canvas');
+    canvas.style.borderRadius = "50%";
+    canvas.style.overflow = "hidden";
     canvas.id = title;
     if (width == 0) width = objContainer.clientWidth;
     if (height == 0) height = objContainer.clientHeight;
