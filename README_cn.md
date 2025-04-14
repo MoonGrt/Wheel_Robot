@@ -193,11 +193,15 @@
 
 - **物理接口**
 
+<div style="width: auto; display: table; margin: auto;">
+
 | 接口类型       | 功能描述                    |
 |----------------|----------------------------|
 | FPC-6 P        | 下载、调试接口              |
 | 2*20排母       | 树莓派接口                  |
 | Type-C         | USB通信                    |
+
+</div>
 
 - **PCB设计特点**
   - 分层地平面：PGND（功率地）/AGND（模拟地）/GND（数字地）分离
@@ -249,11 +253,16 @@
 ### 🔧 结构设计与硬件选型
 
 #### 🎯 传感器选型
+
+<div style="width: auto; display: table; margin: auto;">
+
 | 传感器类型   | 型号            | 性能指标                         | 接口方式        |
 |--------------|-----------------|---------------------------------|----------------|
 | 位置传感器   | AS5147P        | 16位分辨率，0-28kRPM              | SSI数字接口    |
 | 惯性测量单元 | CMP10A         | ±16g加速度计，±2000dps陀螺仪      | I2C+SPI双接口  |
 | 激光雷达     | YDLIDAR X3     | 8m测距，360°×0.33°角分辨率        | USB2.0         |
+
+</div>
 
 #### ⚙️ 动力系统
 - **无刷直流电机**
@@ -383,17 +392,120 @@
 #### 🤖 ROS系统集成
 
 ##### 🧪 仿真平台构建
-先搭建SLAM仿真平台，便于快速进行算法验证、参数调试。实物电池容量有限，且容易损伤影响项目进度。但是难以对轮足机器人进行直接仿真，这里则简单使用两轮差速模型小车进行试验。
+先搭建SLAM仿真平台，便于快速进行算法验证、参数调试。实物电池容量有限，且容易损伤影响项目进度。
 
 - **URDF**：机器人模型结构建模；
-  - 对solidworks建模进行坐标化，将结果转换为URDF格式；
+  - **sw_urdf_exporter工具**：https://github.com/ros-industrial/sw_urdf_exporter
+    - 对solidworks建模进行坐标化参数化，使用工具sw_urdf_exporter将结果转换为URDF格式；
+    - 难以对轮足机器人进行直接仿真，这里则简单将轮足机器人转化为两轮差速模型进行试验；
+    - 工具将自动根据模型材料计算质量和惯性矩，并生成相应的STL文件。
+  - **Wheel_Robot**：基础底座（base_link）、激光雷达（laser_link）、IMU（imu_link）、左右驱动轮（left_wheel_link、right_wheel_link）
+    - base：固定IMU、激光雷达、8个Arm（简化模型：将arm直接固定在底座上，无法上下移动）
+      - 质量：0.459 kg，是机器人的主体部分。
+      - 惯性原点：位于 (-0.00238, 0, 0.0969)，可能因设计重心偏移。
+      - 几何与碰撞：均使用 base_link.STL 文件定义。
+    - laser：
+      - 质量：0.0866 kg，轻量化设计。
+      - 安装位置：通过 laser_joint 固定在 base_link 的 (-0.0005, 0, 0.1246) 处。
+      - 功能：激光雷达传感器，位于机器人顶部。
+    - imu：
+      - 质量：0.00216 kg，极轻。
+      - 安装位置：通过 imu_joint 固定在 base_link 的 (-0.01, 0, 0.0946) 处。
+      - 功能：惯性测量单元，靠近底座中心，用于姿态检测。
+    - wheel：
+      - 质量：约 0.01686 kg，对称设计。
+      - 几何与碰撞：均使用 left_wheel_link.STL 和 right_wheel_link.STL。
+      - 安装位置：
+        - 左轮：(0, 0.0655, 0.02596)，绕 y 轴旋转（axis="0 1 0"）。
+        - 右轮：(0, -0.0655, 0.02596)，绕 y 轴负方向旋转（axis="0 -1 0"）。
+        - 轮间距：0.174 m（对称分布于 base_link 两侧）。
+
+<p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:35px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/robot_description.png" /></p>
+
 - **Gazebo**：实现完整仿真环境；
-  - 包含机器人、环境、激光雷达、里程计等；
+  - **gazebo插件**：在生成的urdf插件中添加插件，才能生成仿真环境允许所需要的传感器数据；
+    - **1. 差分驱动插件（`diff_drive`）**：实现差分驱动控制与里程计发布。
+      - **轮距（`wheel_separation`）**：`0.174 m`
+      - **轮径（`wheel_diameter`）**：`0.026 m`
+      - **最大扭矩与加速度**：`20 N·m` 和 `1.0 rad/s²`，适用于小型机器人，但需根据实际电机性能调整。
+      - **TF 发布**：`publish_odom_tf` 设为 `true`，确保 `odom` → `base_link` 的坐标变换正常。
+    - **2. 关节状态发布插件（`joint_state`）**：发布左右轮关节状态到 `/joint_states`。
+      - **更新频率**：`30 Hz`，与差分驱动插件一致，合理。
+      - **关节名称**：正确关联 `left_wheel_joint` 和 `right_wheel_joint`，与URDF匹配。
+      - **TF 发布**：robot_state_publisher节点运行时发布 `base_link` → `left_wheel_link` 和 `base_link` → `right_wheel_link` 的坐标变换。
+    - **3. IMU传感器插件**：配置IMU传感器，并发布IMU数据。
+      - **噪声模型**：角速度和线加速度均添加高斯噪声，符合真实IMU特性。
+        - **角速度噪声**：标准差 `2e-4 rad/s`，轻微抖动，合理。
+        - **线加速度噪声**：标准差 `0.017 m/s²`，偏差均值 `0.1 m/s²`，模拟零偏漂移，符合低成本IMU特性。
+      - **更新频率**：`100 Hz`，满足多数SLAM算法需求。
+      - **TF 发布**：robot_state_publisher节点运行时发布 `base_link` → `imu_link` 的坐标变换。
+    - **4. 激光雷达（LiDAR）插件**：配置激光雷达，并发布激光雷达数据。
+      - **扫描参数**：360°扫描，分辨率 `1°`，最大范围 `3.5 m`，最小 `0.12 m`，适用于室内环境。
+      - **噪声**：高斯噪声（`stddev=0.01 m`），模拟测量误差，合理。
+      - **发布频率**：`5 Hz`，较低，可能影响实时避障，建议提升至 `10-20 Hz`。
+      - **安装位置**：`<pose>0 0 0.075 0 0 0</pose>`，相对 `laser_link` 的偏移需与URDF中激光雷达实际高度（`z=0.1246 m`）叠加，确保最终位置正确。
+      - **TF 发布**：robot_state_publisher节点运行时发布 `base_link` → `laser_link` 的坐标变换。
+  - **仿真场景**：
+    - 场景1：[willowgarage](Software\ROS\wheel_robot_sim\src\wheel_robot\worlds\willowgarage.png)
+      - Willow Garage 办公环境是一个经典的仿真场景，用于测试机器人导航、SLAM 和人机交互算法。
+    - 场景2：[cafe](Software\ROS\wheel_robot_sim\src\wheel_robot\worlds\cafe.png)
+      - Cafe World 是一个模拟咖啡馆场景的环境，设计用于测试机器人在动态环境下的导航、SLAM 和人机交互算法。
+    - 两者对比
+        <div style="width: auto; display: table; margin: auto;">
+
+        | **特性**               | **Willow Garage**            | **Cafe World**               |
+        |------------------------|-----------------------------|-----------------------------|
+        | **场景类型**           | 办公环境                    | 服务场景（咖啡馆）          |
+        | **动态元素**           | 静态障碍物为主              | 动态行人 + 可移动物体       |
+        | **测试重点**           | 导航、SLAM                  | 人机交互、避障             |
+        | **复杂度**             | 中等（结构化布局）          | 高（动态干扰多）            |
+
+        </div>
+
+<p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:35px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/sim_tftree.png" /></p>
+
+<p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:35px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/sim_gazebo.png" /></p>
+
 - **Cartographer + Navigation2**：实现地图构建与导航路径规划。
+  - 地图构建：**Cartographer**；
+    - 介绍：Cartographer 是由 Google 开发的开源实时 SLAM（同步定位与地图构建）系统，支持 2D 和 3D 环境的地图构建。它通过融合多传感器数据（如激光雷达、IMU、里程计等），实现高精度且低漂移的实时建图，广泛应用于机器人、自动驾驶等领域。
+    - 原理：
+      1. **前端扫描匹配**：使用局部子图（Submaps）构建，通过实时激光雷达数据与子图匹配，估计机器人位姿。
+      2. **后端优化**：利用闭环检测（Loop Closure）和全局优化（基于图优化的 SLAM 框架）消除累积误差。
+      3. **多传感器融合**：结合 IMU、里程计等数据，提升位姿估计的鲁棒性。
+    - 优点：
+      - **高效实时性**：支持实时建图，适合动态环境应用。
+      - **多传感器支持**：灵活融合激光雷达、IMU 等数据，适应复杂场景。
+      - **闭环检测强**：显著减少长期运行的累积误差，提升地图全局一致性。
+      - **开源可扩展**：代码结构清晰，支持 2D/3D 建图，社区活跃。
+    - 缺点：
+      - **配置复杂**：参数调节依赖经验，需针对不同传感器和环境优化。
+      - **计算资源需求高**：3D 建图或大规模场景下对硬件要求较高。
+      - **动态环境处理有限**：主要针对静态环境设计，动态障碍物可能影响建图精度。
+    - [配置](Software\ROS\wheel_robot\src\carto\config\carto.lua)：
+
+  - 导航路径规划：**Navigation2**；
+    - 介绍：Navigation2 是 ROS 2 中的官方导航框架，用于移动机器人的路径规划与自主导航。支持全局路径规划、局部避障、恢复行为等功能，适用于轮式机器人、服务机器人等场景。
+    - 原理：
+      1. **全局规划**：基于代价地图（Costmap）和算法（如 A*、Dijkstra）生成全局最优路径。
+      2. **局部规划**：结合动态窗口法（DWA）或 Timed Elastic Band（TEB）算法，实时避障并跟踪路径。
+      3. **行为树控制**：通过行为树（Behavior Tree）管理导航状态（如重规划、恢复模式）。
+    - 优点：
+      - **模块化设计**：插件化架构支持自定义算法（如更换规划器或控制器）。
+      - **动态环境适应**：实时更新代价地图，有效应对动态障碍物。
+      - **跨平台兼容**：基于 ROS 2，支持多种机器人硬件和仿真环境。
+      - **行为树管理**：灵活处理复杂导航逻辑（如故障恢复、多目标切换）。
+    - 缺点：
+      - **实时性局限**：在密集障碍物或复杂地形中，局部规划可能延迟。
+      - **依赖传感器质量**：定位（如 AMCL）和避障效果受传感器精度影响大。
+      - **配置繁琐**：需针对机器人动力学参数（如速度、加速度）精细调参。
+    - [配置](Software\ROS\wheel_robot\src\nav2\param\fishbot_nav2.yaml)：
+
 - **Web 控制台**
   - 地图浏览：实时地图更新、路径显示；
   - 控制功能：方向按钮、虚拟摇杆控制；
-  - 数据可视化：传感器状态、电机反馈、电池状态等。
+
+<p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:35px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/sim_web.png" /></p>
 
 ##### 🚗 实物部署与控制
 在完成SLAM仿真实验后，软件上的嵌合已经基本完成，接下来只需要将仿真时使用的gazebo产生的传感器数据更换为实物使用的传感器数据，并进行相应的控制算法调试；再将算法对机器人的控制通过Raspberry Pi与FOC驱动器的通信协议传递到两轮和舵机上。此外，因仿真时使用简单的两轮差速小车模型，实物搭建的轮子机器人需要进行更复杂的控制算法的调试。
@@ -426,7 +538,7 @@
     - 输出ROS laserscan消息，供其他节点使用；
 - **自主运动控制**
   - 支持平衡控制算法：串级PID控制（速度环+位置环）；
-  - 平衡节点监听cmd_vel，实现；
+  - 平衡节点监听cmd_vel，修改target_linear_vel和target_angular_vel，从而实现运动控制；
   - 支持本地导航 + 避障（融合雷达与IMU数据）。
 - **地图显示**
   - Raspbery Pi 远程桌面进行程序调试和地图显示
