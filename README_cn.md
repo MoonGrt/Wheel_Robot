@@ -74,10 +74,9 @@
 
 - [📦 硬件系统设计](#-硬件系统设计)
   - [🔋 电源管理模块](#-电源管理模块)
-  - [🧩 PCB 设计](#-pcb-设计)
-    - [FOC驱动器](#FOC驱动器)
-    - [调试器](#调试器)
-    - [磁编码器](#磁编码器)
+  - [🧩 FOC驱动器](#-FOC驱动器)
+  - [🐞 调试器](#-调试器)
+  - [🧲 磁编码器](#-磁编码器)
 - [🔧 结构设计与执行单元](#-结构设计与执行单元)
   - [🎯 传感器选型](#-传感器选型)
   - [⚙️ 动力系统](#-动力系统)
@@ -85,6 +84,7 @@
 - [💻 软件系统设计](#-软件系统设计)
   - [⚡ FOC电机控制子系统](#-FOC电机控制子系统)
   - [🤖 ROS系统集成](#-ROS系统集成)
+  - [🌐 Web控制台](#-web控制台)
 
 ### 硬件选型
 | 模块       | 组件/芯片型号        | 功能描述                             | 器件参数                             |
@@ -109,6 +109,8 @@
 
 ### 📦 硬件系统设计
 
+<p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document\images\Hardware.png" width="800"/></p>
+
 #### 🔋 电源管理模块
 
 电源管理模块将电池能量，经过降压稳压滤波，分配给Raspberry Pi、电机驱动器、传感器（IMU、Lidar、编码器）、动力系统（BLDC电机、舵机）等模块，确保各模块的电源稳定运行。
@@ -118,7 +120,7 @@
   - 15A 钮子开关（总开关：用于控制电池充电/放电；紧急断开电池） + 16AWG 导线
   - 29.4V 2A 充电器
   <!-- - 充电系统支持快速插拔和过压保护 -->
-- **电压转换与稳压滤波**
+- **电压转换**
   - **两级降压架构**：
     - 电源24V：通过功率MOS直接供电BLDC电机、BUCK降压电路、电源电压采集电路等模块。
     - 第一级：TPS54160（24V→12V，供电耗散电阻；24V→5V：供电舵机、Raspberry、LDO）(输出电流1.5A，开关峰值限制电流1.8~2.7A)
@@ -127,10 +129,10 @@
   - **去耦滤波网络**：10×1812陶瓷电容（50V/47µF）
   - **隔离地**：模拟地/功率地与数字地隔离，避免信号干扰。
 - **电路保护设计**
-  - **软启动保护**：TPS54160 软启动设置引脚外接 6.8n电容（电容值越大，启动越缓慢）
   - **过流保护**：FSMD012自恢复保险丝（48V/40A）
   - **温度监测**：10kohm NCP18XH103F0热敏电阻（B值-25℃/100℃-3455K）
   - **反接保护**：SS34肖特基二极管（40V/3A）
+  - **软启动保护**：TPS54160 软启动设置引脚外接 6.8n电容（电容值越大，启动越缓慢）
   - **瞬态抑制**：SMAJ26CA（反向截止电压(Vrwm)：26V；钳位电压：42.1V；峰值脉冲电流(Ipp)：9.5A）、旁路电阻（10Ω）
     - 之前使用的SMAJ30CA，钳位电压约为 48.4V，浪涌电流非常大，在TVS反应前，电压瞬间升高至电容击穿电压以上，导致与TVS最近的电容击穿。（电池输出电压为24V~29V）
     - 之前使用3.3Ω的电阻，对浪涌抑制能力有限
@@ -138,12 +140,11 @@
     - 如果没有功率耗散电阻，则会在减速期间将多余的功率回充到供电电源，以达到所需的减速扭矩。如果供电电源不能够吸收掉这些能量（一般使用电池供电才可以吸收这些能量），母线电压将不可避免地升高。这有可能造成开关电源被损坏。本设计中虽然使用电池供电，但仍然使用 RTP50W 耗散电阻，以提升电机系统稳定性。
     - 功率电阻的功率选择取决于您对电机的配置和电机减速时产生的峰值功率或者平均减速功率。为了安全起见，需要考虑电机的转速和电机所能承受的电流。当以最大速度和最大电机电流制动时，功率耗散电阻中消耗的功率可以计算为： P_brake = V_emf * I_motor 其中 V_emf = motor_rpm / motor_kv。在本次设计中，使用 1250rpm 45rmp/v 0.93A 的 PM3510 电机，则 P_brake = 1250 / 45 * 0.53 = 25.83W。
 
-#### 🧩 PCB 设计
+#### 🧩 FOC驱动器
 
-##### FOC驱动器
 基于STM32F4系列微控制器的双电机FOC驱动方案，支持无刷电机矢量控制，集成编码器接口、HALL传感器、CAN通信和多种外设接口。它结合了强大的微控制器与专用驱动芯片，实现了精准、高响应的闭环控制。
 
-<p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Hardware\FOC\Document\3D_ODrive.png"/></p>
+<p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Hardware\FOC\Document\3D_ODrive.png" width="500"/></p>
 
 - **主要功能模块**
   - **主控单元**
@@ -215,7 +216,12 @@
   - 大电流路径：1oz铜厚 20~50mil宽，覆铜加强散热
   - 测试点：TP1-TP6方便关键信号测量
 
-##### 调试器
+- **版本**
+
+<p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document\images\FOC-bottom.jpg" width="500"/></p>
+
+
+#### 🐞 调试器
 本电路基于STM32F103CBT6微控制器实现调试器功能，兼容STLink V2和DAPLink固件，支持Type-C USB接口和SWD/JTAG调试。主要目的：迷你化（11mm x 26mm）、便携化（将SWD和UART结合用FPC-6接口，方便调试器与主控连接，而不是用杜邦线一根一根连接）。
 
 <p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Hardware\Link\Document\3D_Link.png" width="300"/></p>
@@ -241,7 +247,7 @@
   - **DTC143ZCA**：数字晶体管：用于检测 VBUS 是否有效，从而控制 USB_RENU 信号
     - R10、R15、R13 等电阻与 Q1 配合，形成一个简单的电压检测与拉低控制。当 VBUS 检测到 5V，Q1 导通，USB_RENU 被拉高（或拉低），提示MCU "USB插入检测"。
 
-##### 磁编码器
+#### 🧲 磁编码器
 高精度磁性旋转位置传感器设计的非接触式编码器，兼容AS5147P、AS5047P，适用于电机位置检测，支持SPI/PWM输出模式，具备抗干扰和高温工作特性。AS5147P自带一个LDO，因此不需要额外的LDO。
 
 <p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Hardware\Encoder\Document\3D_AS5147P.png" width="150"/></p>
@@ -263,34 +269,9 @@
 
 ### 🔧 结构设计与硬件选型
 
-<p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/3D-Structure_Exposure.png"/></p>
+<p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/3D-Structure_Exposure.png" width="500"/></p>
 
-#### 🎯 传感器选型
-
-<div style="width: auto; display: table; margin: auto;">
-
-| 传感器类型   | 型号            | 性能指标                         | 接口方式        |
-|--------------|-----------------|---------------------------------|----------------|
-| 位置传感器   | AS5147P        | 16位分辨率，0-28kRPM              | SSI数字接口    |
-| 惯性测量单元 | CMP10A         | ±16g加速度计，±2000dps陀螺仪      | I2C+SPI双接口  |
-| 激光雷达     | YDLIDAR X3     | 8m测距，360°×0.33°角分辨率        | USB2.0         |
-
-</div>
-
-#### ⚙️ 动力系统
-- **无刷直流电机**
-  - 型号：**PM3510**
-  - 参数：1250rpm，0.11N·m，45 rmp/v，驱动芯片为 DRV8301。
-  - Note：
-    - 需更换电机径向磁铁（原有电机径向磁铁磁性较差，导致编码器噪声大）。
-    - 安装更强力编码器磁铁时，需考虑机械设计中磁铁与编码器距离。
-- **舵机**
-  - 型号：**SG995**
-  - 参数：20ms，180°旋转角（500-2500），10kg·cm 扭矩（@6V），100mA。
-  - Note：
-    - 注意安装时的初始角度，避免旋转方向错误。
-
-#### 🧱 外壳与机构
+#### 🧱 外壳与结构
 - **3D 打印外壳**
   - 结构：模块化拼装，带快拆接口，便于维护和功能拓展。
   - 内部预留电池仓、电路板固定孔位、散热设计。
@@ -318,7 +299,7 @@
       - 固定舵机和Motor Case
       - 预留轴承空间
       - 预留电机线、编码器线空间
-      - 控制电机径向磁铁同编码器的距离 （<1mm）
+      - 控制电机径向磁铁同编码器的距离（<1mm）
       - 预留连接的螺纹孔、螺栓沉头孔
   - Motor Case：
     - 材质：PLA
@@ -337,12 +318,39 @@
       - 前后面右上角开孔，预留电池线孔位
       - 预留连接的螺纹孔、螺栓沉头孔
 
+#### ⚙️ 动力系统
+- **无刷直流电机**
+  - 型号：**PM3510**
+  - 参数：1250rpm，0.11N·m，45 rmp/v，驱动芯片为 DRV8301。
+  - Note：
+    - 需更换电机径向磁铁（原有电机径向磁铁磁性较差，导致编码器噪声大）。
+    - 安装更强力编码器磁铁时，需考虑机械设计中磁铁与编码器距离。
+- **舵机**
+  - 型号：**SG995**
+  - 参数：20ms，180°旋转角（500-2500），10kg·cm 扭矩（@6V），100mA。
+  - Note：
+    - 注意安装时的初始角度，避免旋转方向错误。
+
+#### 🎯 传感器选型
+
+<div style="width: auto; display: table; margin: auto;">
+
+| 传感器类型   | 型号            | 性能指标                         | 接口方式        |
+|--------------|-----------------|---------------------------------|----------------|
+| 位置传感器   | AS5147P        | 16位分辨率，0-28kRPM              | SSI数字接口    |
+| 惯性测量单元 | CMP10A         | ±16g加速度计，±2000dps陀螺仪      | I2C+SPI双接口  |
+| 激光雷达     | YDLIDAR X3     | 8m测距，360°×0.33°角分辨率        | USB2.0         |
+
+</div>
+
 - **结构连接**
   - 轴承 轧带 绝缘胶布 电线 导线 螺栓 螺母 橡胶圈（轮胎） 502胶水
 
 ---
 
 ### 💻 软件系统设计
+
+<p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document\images\Software.png" width="800"/></p>
 
 #### ⚡ FOC电机控制子系统
 
@@ -442,7 +450,7 @@ graph TD
     class D1 error
 ```
 
-- 🟦 **初始化阶段（系统启动与配置）**
+- 🟦 **初始化阶段**
   - 从 `系统启动` 开始：
   - **从NVM加载配置参数**：用于加载之前保存的系统参数，比如电机配置、校准数据等。
   - **系统初始化**：分为三个关键部分：
@@ -505,85 +513,13 @@ graph TD
       G --> H[计算出电压命令，经 SVPWM 模块变换生成 PWM 波形]
   ```
 
-  其中：  
-  - **输入处理** 根据不同的输入模式（Passthrough、速度/扭矩斜坡、轨迹规划等）更新内部 setpoint，并对环路带宽、限幅等进行滤波。  
-  - **位置环** 在位置控制模式下，仅采用比例反馈（pos_gain），并配合环路漂移校正、齿槽补偿等措施。  
-  - **速度环** 除了乘以速度增益（vel_gain）得到一个初步扭矩命令外，还引入积分项（vel_integrator_torque_）进行误差累积，并采用防风控制（增益调度及抗饱和措施）。  
+  其中：
+  - **输入处理** 根据不同的输入模式（Passthrough、速度/扭矩斜坡、轨迹规划等）更新内部 setpoint，并对环路带宽、限幅等进行滤波。
+  - **位置环** 在位置控制模式下，仅采用比例反馈（pos_gain），并配合环路漂移校正、齿槽补偿等措施。
+  - **速度环** 除了乘以速度增益（vel_gain）得到一个初步扭矩命令外，还引入积分项（vel_integrator_torque_）进行误差累积，并采用防风控制（增益调度及抗饱和措施）。
   - **电流环** 则在 Field Oriented Control 模块内对 d-q 电流误差进行 PI 调控，积分状态受限于调制矢量饱和条件，并结合前馈项（如反电动势、R/L 前馈）保证系统响应。
 
-- **各环节详细描述**
-  - **位置环** PID（慢速闭环）
-    - **输入**：目标位置（pos_setpoint）与实际位置（编码器 / PLL 或 sensorless 估算）。
-    - **输出**：生成目标速度（vel_setpoint）的修正值。  
-  位置环常采用纯比例控制（P 控制），同时应对循环型 setpoints 做周期处理。部分模式下，还会将抗齿槽校准数据叠加到误差修正中。
-
-    ```cpp
-    // 注意：实际代码中会区分线性与循环型 setpoints，
-    // 同时引入防止漂移和增益调度（在误差较小时降低反馈增益）。
-    float pos_error = pos_setpoint - pos_estimate;
-    if(config_.circular_setpoints) {
-        pos_error = wrap_pm(pos_error, pos_wrap_value);
-    }
-    vel_setpoint = vel_setpoint_base + config_.pos_gain * pos_error;
-    ```
-
-  - **速度环** PID（中速闭环）
-    - **输入**：位置环生成的期望速度（含位置 P 补偿）、实际速度（来自编码器 / PLL 输出）。
-    - **输出**：计算得到一个扭矩期望，该值经转换后代表电流（iq_setpoint）。  
-    实现采用 PI 控制结构，其中积分项经过防饱和（如限幅或衰减）处理。示例代码概念如下：
-
-    ```cpp
-    float vel_error = vel_desired - vel_estimate;
-    vel_integrator_torque_ += (vel_integrator_gain * vel_error * dt);
-    vel_integrator_torque_ = std::clamp(vel_integrator_torque_,   -config_.  vel_integrator_limit, config_.vel_integrator_limit);
-    
-    // 这里还可能结合增益调度：在小误差时降低 P 作用    （gain_scheduling_multiplier）
-    float torque = torque_setpoint + (vel_gain *   gain_scheduling_multiplier *   vel_error) + vel_integrator_torque_;
-    ```
-
-    其中：
-    - **输入模式**：不同模式（如 VEL_RAMP、TRAP_TRAJ、MIRROR、TUNING 等）决定了如何更新 pos_setpoint/vel_setpoint/torque_setpoint；
-    - **限幅机制**：通过限制 torque 和 vel_setpoint 保证系统输出不超出安全范围；
-    - **错误检测**：例如当检测到超速（overspeed error）或 spinout（机电功率不匹配）时，立即触发错误状态。
-
-  - **电流环** PID（FOC 控制，高速闭环）
-    - **输入**：目标电流（iq_setpoint 与（可选）id_setpoint）与测量电流（ADC 采样并经过 Clarke / Park 变换得到的 Iq、Id）。
-    - **输出**：经过 PI 控制（包括前馈项）计算出 d-q 坐标系下的电压命令，再经逆 Park 变换和 SVPWM 算法转换为 PWM 波形。示例代码概念如下：
-
-    ```cpp
-    // 以 Iq 分量为例（Id 一般保持或跟踪一个预定的值，取决于算法与电机类型）
-    float Ierr_q = iq_setpoint - iq_measured;
-    v_current_control_integral_q_ += Ierr_q * (i_gain * dt);
-    
-    // 如果检测到过调制（输出矢量幅值超出限制），则对积分项做衰减处理（防积分风暴）
-    float mod_scalefactor = /* 根据当前输出模量计算的缩放因子 */;
-    if (mod_scalefactor < 1.0f) {
-        // 锁死或衰减积分
-        v_current_control_integral_q_ *= 0.99f;
-    }
-    vq = Vq_feedforward + (p_gain * Ierr_q + v_current_control_integral_q_);
-    ```
-
-    再经过类似下面的逆 Park 变换和 SVPWM 算法：
-
-    ```cpp
-    // 将 d-q 坐标的 mod_d, mod_q 转换至 α-β 坐标
-    float c_p = cos(pwm_phase);
-    float s_p = sin(pwm_phase);
-    float mod_alpha = c_p * mod_d - s_p * mod_q;
-    float mod_beta = c_p * mod_q + s_p * mod_d;
-    
-    // SVM 模块将 (mod_alpha, mod_beta) 映射为 PWM 定时（tA, tB, tC）
-    auto [tA, tB, tC, success] = SVM(mod_alpha, mod_beta);
-    ```
-
-    - 注意：实际控制中当前控制状态会用于前馈和负载预测，同时考虑 R/L 及反电动势的前馈补偿，这部分代码在 Motor::update() 和 FieldOrientedController::get_alpha_beta_output() 中均有所体现。
-
-    > **补充说明**：  
-    > - 所有各环节的 PID 参数（例如 pos_gain、vel_gain、vel_integrator_gain、当前环 p_gain、i_gain 等）均在系统初始化时从 NVM 加载，参数的调节直接影响闭环动态与稳定性。  
-    > - 另外，各输入模式（例如轨迹规划模式 TRAP_TRAJ）和抗齿槽校准（anticogging）措施，也会在 PID 控制链之前完成 setpoint 的预处理，从而保证控制指令平滑、鲁棒。
-
-- **控制线程运行示意**
+- **控制链运行示意**
   控制线程与外设、ADC/FOC 中断之间的交互可以概述为：
 
   ```mermaid
@@ -593,7 +529,7 @@ graph TD
       participant 控制线程
       participant ADC/FOC中断
       participant 编码器
-  
+
       上位机->>通信线程: 发送目标指令（JSON /其它格式）
       通信线程->>控制线程: 更新输入 setpoints（位置/速度/扭矩）
       控制线程->>编码器: 获取位置、速度数据（包含 PLL 或 encoder 估算）
@@ -610,6 +546,77 @@ graph TD
   - **各环节反馈**：位置与速度误差分别影响低频与中频控制，而电流环运行在较高频率下，确保整个闭环响应及时。
   - **错误保护与监控**：在控制线程内部不断检测传感器有效性、限幅状态及功率不匹配情况，一旦异常会触发保护（如停机或错误上报）。
 
+- **位置环** PID（慢速闭环）
+  - **输入**：目标位置（pos_setpoint）与实际位置（编码器 / PLL 或 sensorless 估算）。
+  - **输出**：生成目标速度（vel_setpoint）的修正值。
+  位置环常采用纯比例控制（P 控制），同时应对循环型 setpoints 做周期处理。部分模式下，还会将抗齿槽校准数据叠加到误差修正中。
+
+  ```cpp
+  // 注意：实际代码中会区分线性与循环型 setpoints，
+  // 同时引入防止漂移和增益调度（在误差较小时降低反馈增益）。
+  float pos_error = pos_setpoint - pos_estimate;
+  if(config_.circular_setpoints) {
+      pos_error = wrap_pm(pos_error, pos_wrap_value);
+  }
+  vel_setpoint = vel_setpoint_base + config_.pos_gain * pos_error;
+  ```
+
+- **速度环** PID（中速闭环）
+  - **输入**：位置环生成的期望速度（含位置 P 补偿）、实际速度（来自编码器 / PLL 输出）。
+  - **输出**：计算得到一个扭矩期望，该值经转换后代表电流（iq_setpoint）。
+    实现采用 PI 控制结构，其中积分项经过防饱和（如限幅或衰减）处理。示例代码概念如下：
+
+  ```cpp
+  float vel_error = vel_desired - vel_estimate;
+  vel_integrator_torque_ += (vel_integrator_gain * vel_error * dt);
+  vel_integrator_torque_ = std::clamp(vel_integrator_torque_, -config_.  vel_integrator_limit, config_.vel_integrator_limit);
+  // 这里还可能结合增益调度：在小误差时降低 P 作用    （gain_scheduling_multiplier）
+  float torque = torque_setpoint + (vel_gain * gain_scheduling_multiplier * vel_error) + vel_integrator_torque_;
+  ```
+
+  其中：
+  - **输入模式**：不同模式（如 VEL_RAMP、TRAP_TRAJ、MIRROR、TUNING 等）决定了如何更新 pos_setpoint/vel_setpoint/torque_setpoint；
+  - **限幅机制**：通过限制 torque 和 vel_setpoint 保证系统输出不超出安全范围；
+  - **错误检测**：例如当检测到超速（overspeed error）或 spinout（机电功率不匹配）时，立即触发错误状态。
+
+- **电流环** PID（FOC 控制，高速闭环）
+  - **输入**：目标电流（iq_setpoint 与（可选）id_setpoint）与测量电流（ADC 采样并经过 Clarke / Park 变换得到的 Iq、Id）。
+  - **输出**：经过 PI 控制（包括前馈项）计算出 d-q 坐标系下的电压命令，再经逆 Park 变换和 SVPWM 算法转换为 PWM 波形。示例代码概念如下：
+
+  ```cpp
+  // 以 Iq 分量为例（Id 一般保持或跟踪一个预定的值，取决于算法与电机类型）
+  float Ierr_q = iq_setpoint - iq_measured;
+  v_current_control_integral_q_ += Ierr_q * (i_gain * dt);
+
+  // 如果检测到过调制（输出矢量幅值超出限制），则对积分项做衰减处理（防积分风暴）
+  float mod_scalefactor = /* 根据当前输出模量计算的缩放因子 */;
+  if (mod_scalefactor < 1.0f) {
+      // 锁死或衰减积分
+      v_current_control_integral_q_ *= 0.99f;
+  }
+  vq = Vq_feedforward + (p_gain * Ierr_q + v_current_control_integral_q_);
+  ```
+
+  再经过类似下面的逆 Park 变换和 SVPWM 算法：
+
+  ```cpp
+  // 将 d-q 坐标的 mod_d, mod_q 转换至 α-β 坐标
+  float c_p = cos(pwm_phase);
+  float s_p = sin(pwm_phase);
+  float mod_alpha = c_p * mod_d - s_p * mod_q;
+  float mod_beta = c_p * mod_q + s_p * mod_d;
+
+  // SVM 模块将 (mod_alpha, mod_beta) 映射为 PWM 定时（tA, tB, tC）
+  auto [tA, tB, tC, success] = SVM(mod_alpha, mod_beta);
+  ```
+
+  - 注意：实际控制中当前控制状态会用于前馈和负载预测，同时考虑 R/L 及反电动势的前馈补偿，这部分代码在 Motor::update() 和 FieldOrientedController::get_alpha_beta_output() 中均有所体现。
+
+  > **补充说明**：
+  > - 所有各环节的 PID 参数（例如 pos_gain、vel_gain、vel_integrator_gain、当前环 p_gain、i_gain 等）均在系统初始化时从 NVM 加载，参数的调节直接影响闭环动态与稳定性。
+  > - 另外，各输入模式（例如轨迹规划模式 TRAP_TRAJ）和抗齿槽校准（anticogging）措施，也会在 PID 控制链之前完成 setpoint 的预处理，从而保证控制指令平滑、鲁棒。
+
+
 ##### 驱动程序开发
 - **编码器（ASA5147P）**：支持多种类型，包括： SPI, ABI, UVW, PWM；该电机驱动器支持两种模式：
   - ABZ模式：使用stm32F4定时器外设的encoder模式，读取电机编码器的位置和速度反馈
@@ -620,14 +627,15 @@ graph TD
   - 使用stm32F4高级定时器TIM1 TIM8：用于三相电机驱动，减少电磁干扰；互补PWM输出，带死区时间配置（在向下计数时强制PWM为50%），防止上下桥臂直通短路
 - **舵机驱动（SG995）**：TIM2的PWM模式，控制舵机的角度。
 
+
 ##### 通信协议
 - **USB CDC/HID** **CAN 总线**
   - fibre 协议栈：一套上位机与下位机通信用的应用层协议。根据ymal文件内容生成相应的通信协议栈。
   - 数据类型：数据包的格式 流的格式
 - **UART 串口**：与外部传感器或树莓派通信。
-  - 串口通信协议：UART 921600 8N1，ASCII格式；以100Hz频率持续发送电机位置和速度信息。；
+  - 串口通信协议：UART 921600 8N1，ASCII格式；以100Hz频率持续发送电机位置和速度信息。
 
-##### 电机配置工具 UI
+##### 配置工具 UI
 - **参数配置工具**
   - 基于QT的可视化界面；
   - 可视化调参：电机极对数、编码器CPR、刹车电阻设置……；
@@ -674,7 +682,7 @@ graph TD
         - 右轮：(0, -0.0655, 0.02596)，绕 y 轴负方向旋转（axis="0 -1 0"）。
         - 轮间距：0.174 m（对称分布于 base_link 两侧）。
 
-<p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:35px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/robot_description.png"/></p>
+<p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:35px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/robot_description.png" width="800"/></p>
 
 - **Gazebo**：实现完整仿真环境；
   - **gazebo插件**：在生成的urdf插件中添加插件，才能生成仿真环境允许所需要的传感器数据；
@@ -716,9 +724,9 @@ graph TD
 
         </div>
 
-<p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:35px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/sim_tftree.png"/></p>
+<p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:35px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/sim_tftree.png" width="800"/></p>
 
-<p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:35px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/sim_gazebo.png"/></p>
+<p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:35px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/sim_gazebo.png" width="800"/></p>
 
 - **Cartographer + Navigation2**：实现地图构建与导航路径规划。
   - 地图构建：**Cartographer**；
@@ -755,21 +763,9 @@ graph TD
       - **配置繁琐**：需针对机器人动力学参数（如速度、加速度）精细调参。
     - [配置](Software\ROS\wheel_robot\src\nav2\param\fishbot_nav2.yaml)：
 
-- **Web 控制台**
-  - 地图浏览：实时地图更新、路径显示；
-  - 控制功能：方向按钮、虚拟摇杆控制；
-
-<p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:35px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/sim_web.png"/></p>
-
 ##### 🚗 实物部署与控制
 在完成SLAM仿真实验后，软件上的嵌合已经基本完成，接下来只需要将仿真时使用的gazebo产生的传感器数据更换为实物使用的传感器数据，并进行相应的控制算法调试；再将算法对机器人的控制通过Raspberry Pi与FOC驱动器的通信协议传递到两轮和舵机上。此外，因仿真时使用简单的两轮差速小车模型，实物搭建的轮子机器人需要进行更复杂的控制算法的调试。
 
-- **机器人启动逻辑**
-  - 启动IMU、Laser、Odometry节点：开始数据接收并发布；
-  - 启动运动控制节点：订阅IMU数据保持平衡，监听cmd_vel进行运动控制；
-  - 启动wheel robot节点：发布机器人描述以及各个link的tf变换；
-  - 启动cartographer节点：订阅激光雷达、IMU、Odometry数据，启动地图构建发布map数据；
-  - 启动web服务：发布cmd_vel运动控制指令，订阅map更新地图显示；
 - **传感器接入与驱动**
   - **AS5147P**：14位旋转编码器，用于电机位置反馈；
     - Raspbery Pi同电机驱动板的UART通信占用了Rapsberry的串口终端，会导致Raspberry无法进入系统；
@@ -802,9 +798,56 @@ graph TD
     ...
   - 机器人运动：
     - 监听cmd_vel，修改target_linear_vel和target_angular_vel，从而实现运动控制；
-- **地图显示**
-  - Raspbery Pi 远程桌面进行程序调试和地图显示
-  - Web 控制台：地图显示、路径规划、控制指令显示；
+- **SLAM 部署**
+  ```mermaid
+  graph TD
+      %% 节点定义
+      subgraph S1[🟦 底层数据]
+          Sensors[传感器节点<br/>IMU, Laser, Odometry]:::sensor
+          WheelRobot[Wheel Robot节点<br/>发布机器人描述与tf]:::sensor
+      end
+
+      subgraph S2[🟩 功能模块]
+          MotionCtrl[运动控制节点<br/>订阅IMU/监听cmd_vel]:::module
+          Cartographer[Cartographer节点<br/>地图构建与map发布]:::module
+      end
+
+      subgraph S3[🟨 外部交互界面]
+          WebService[Web服务<br/>发送cmd_vel/订阅map]:::external
+      end
+
+      %% 数据流连接
+      Sensors -- IMU/Laser/Odom 数据 --> Cartographer
+      Sensors -- IMU 数据 --> MotionCtrl
+      WheelRobot -- 机器人描述/TF --> Cartographer
+
+      WebService -- cmd_vel 控制指令 --> MotionCtrl
+      MotionCtrl -- 运动控制反馈 --> Cartographer
+      Cartographer -- map 地图 --> WebService
+
+      %% 样式设置
+      classDef sensor fill:#cce5ff,stroke:#3399ff,stroke-width:2px;
+      classDef module fill:#d4edda,stroke:#28a745,stroke-width:2px;
+      classDef external fill:#fff3cd,stroke:#ffc107,stroke-width:2px;
+  ```
+
+  - 地图构建：Cartographer；
+    - 启动IMU、Laser、Odometry节点：开始数据接收并发布；
+    - 启动运动控制节点：订阅IMU数据保持平衡，监听cmd_vel进行运动控制；
+    - 启动wheel robot节点：发布机器人描述以及各个link的tf变换；
+    - 启动cartographer节点：订阅激光雷达、IMU、Odometry数据，启动地图构建发布map数据；
+    - 启动web服务：发布cmd_vel运动控制指令，订阅map更新地图显示；
+  - 地图显示
+    - Raspbery Pi 远程桌面进行程序调试和地图显示
+    - Web控制台：地图显示、路径规划、控制指令显示；
+
+
+##### 🌐 Web控制台
+- 地图浏览：实时地图更新、路径显示；
+- 控制功能：方向按钮、虚拟摇杆控制；
+
+<p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:35px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/sim_web.png" width="800"/></p>
+
 
 ### 后续工作
 
@@ -879,3 +922,7 @@ Project Link: [MoonGrt/Wheel_Robot](https://github.com/MoonGrt/Wheel_Robot)
 [issues-url]: https://github.com/MoonGrt/Wheel_Robot/issues
 [license-shield]: https://img.shields.io/github/license/MoonGrt/Wheel_Robot.svg?style=for-the-badge
 [license-url]: https://github.com/MoonGrt/Wheel_Robot/blob/master/LICENSE
+
+
+
+轮足机器人实物图 实际建图 两个UI 
