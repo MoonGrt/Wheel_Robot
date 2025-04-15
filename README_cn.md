@@ -143,15 +143,19 @@
 ##### FOC驱动器
 基于STM32F4系列微控制器的双电机FOC驱动方案，支持无刷电机矢量控制，集成编码器接口、HALL传感器、CAN通信和多种外设接口。它结合了强大的微控制器与专用驱动芯片，实现了精准、高响应的闭环控制。
 
+<p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Hardware\FOC\Document\3D_ODrive.png"/></p>
+
 - **主要功能模块**
   - **主控单元**
     - **核心芯片**：STM32F405VGT6（ARM Cortex-M4内核，主频168MHz，1MB Flash，128KB SRAM）
     - **时钟系统**：8MHz晶体振荡器
     - **调试接口**：SWD（SWCLK/SWDIO）
     - **存储器**：W25Q32JV SPI Flash
-  - **层级结构**：
-
-
+  - **层级结构**：SIG-PWR-GND-SIG
+    - 顶层：信号层+铺铜GND
+    - 内1层：走少量信号+铺铜VCC
+    - 内2层：电源层铺铜GND
+    - 底层：信号层+铺铜GND
   - **电机驱动模块**
     - **驱动芯片**：DRV8301DCAR×2，支持双电机控制
     - **功率级**：
@@ -214,6 +218,8 @@
 ##### 调试器
 本电路基于STM32F103CBT6微控制器实现调试器功能，兼容STLink V2和DAPLink固件，支持Type-C USB接口和SWD/JTAG调试。主要目的：迷你化（11mm x 26mm）、便携化（将SWD和UART结合用FPC-6接口，方便调试器与主控连接，而不是用杜邦线一根一根连接）。
 
+<p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Hardware\Link\Document\3D_Link.png" width="300"/></p>
+
 - **主要模块**
   - **电源模块**
     - **LDO电路**：5V转3.3V（型号662K）
@@ -238,6 +244,8 @@
 ##### 磁编码器
 高精度磁性旋转位置传感器设计的非接触式编码器，兼容AS5147P、AS5047P，适用于电机位置检测，支持SPI/PWM输出模式，具备抗干扰和高温工作特性。AS5147P自带一个LDO，因此不需要额外的LDO。
 
+<p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Hardware\Encoder\Document\3D_AS5147P.png" width="150"/></p>
+
 - **核心特性**
   - **分辨率**：14位绝对位置输出（0.022°精度）
   - **接口支持**：
@@ -255,7 +263,7 @@
 
 ### 🔧 结构设计与硬件选型
 
-<p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/3D-Structure_Exposure.png" /></p>
+<p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/3D-Structure_Exposure.png"/></p>
 
 #### 🎯 传感器选型
 
@@ -341,23 +349,6 @@
 ##### RT-Thread 实时操作系统
 实现任务隔离：控制线程、电流采样线程、通信线程独立运行；
 
-- **总流程**：
-  - 从 NVM 加载配置 - 常规初始化（外设、引脚、中断、系统等） - 创建主线程 - 启动系统调度
-  - 进入主线程 - 开启外设ADC、PWM - 创建通信线程 - 创建底层监控线程 - 创建电机控制线程 - 删除主线程
-- **线程管理**
-  - 主线程：负责系统的初始化、调度、资源管理等；
-  - 通信线程：负责底层通信，包括串口、CAN等；
-    - 持续以100Hz的频率发送两个电机的位置和速度
-  - 电机控制线程：负责电机控制，包括电机驱动、编码器、PID控制等；
-  - 底层监控线程：负责监控电流电压温度以及DRV8301 uFAULT等；
-- **中断**
-  - USB中断：接收USB数据，并将数据解析成指令；
-  - 定时器中断：电流采样、时序同步 和 错误检测
-  - ADC中断：采集电流数据，电流环
-
-- Note:
-  - 注意为什么线程执行控制，而使用定时器中断？
-
 ```mermaid
 graph TD
     A[系统启动] --> B[NVM中加载配置参数]
@@ -390,12 +381,12 @@ graph TD
         H1c --> H1f[UART轮询发送数据<br>电机速度/位置]
 
         H2[监控线程]
-        H2 --> H2a[采集系统状态<br>温度、电压、错误信号]
+        H2 --> H2a[采集系统状态<br>温度/电压/错误信号]
         H2a --> H2b[异常检测]
 
         H3[电机状态线程]
         H3 --> H3a[周期刷新<br>每个轴的状态信息]
-        H3a --> H3b[同步当前控制状态<br>工作模式 / 反馈变量]
+        H3a --> H3b[同步当前控制状态<br>工作模式/反馈变量]
         H3b --> H3c[转发错误信息]
     end
 
@@ -403,43 +394,221 @@ graph TD
     subgraph 控制链执行-核心定时器中断
         T1[高精度定时器中断<br>控制周期触发] --> T2[更新系统时隙]
         T2 --> T3[软件触发控制中断<br>调度控制计算流程]
-        T3 --> T4[触发采样及数据获取<br>电流 / 编码器 / 传感器数据]
-        T4 --> T5[执行实时控制算法回路<br>（位置 / 速度 / 电流）]
+        T3 --> T4[触发采样及数据获取<br>电流/编码器/传感器数据]
+        T4 --> T5[执行实时控制算法回路<br>（位置/速度/电流）]
         T5 --> T6[重置状态 & 检查安全条件]
-        T6 --> T7[执行闭环控制更新<br>状态估计、PID调节、PWM更新]
-        T7 --> T8[验证周期完整性 / 安全检查]
+        T6 --> T7[执行闭环控制更新<br>状态估计/PID调节/PWM更新]
+        T7 --> T8[验证周期完整性/安全检查]
         T5 -->|异常检测| D1[中断触发保护<br>停机/错误上报]
         T8 -->|异常检测| D1
     end
 
     %% 辅助中断
     subgraph 辅助中断
-        U1[USB/CAN 通信中断] --> U2[接收指令数据 → 写入数据队列] --> H1b
-        G1[DRV8301 故障中断<br>GPIO EXTI中断线] --> G2[检测故障信号<br>立即关 PWM / 上报错误]
-        E1[编码器/PWM 捕获中断<br>EXTI/TIM] --> E2[读取PWM信号宽度/记录编码器边沿] --> T4
+        U1[USB/CAN 通信中断]
+        U1 --> U2[接收指令数据]
+        U2 --> U3[写入数据队列]
+
+        G1[GPIO EXIT中断]
+        G1 --> G2[检测故障信号]
+        G2 --> G3[DRV8301 故障中断...<br>nFAULT 拉低...] --> G3a[断电/上报错误]
+        G2 --> G4[编码器 Z 相位中断<br>] --> G4a[编码器校准] --> T4
+
+        E1[辅助TIM中断]
+        E1 --> E2[编码器中断] --> E2a[记录编码器边沿] --> T4
+        E1 --> E3[PWM 捕获中断] --> E3a[读取PWM信号宽度] --> T4
     end
 
     %% 交互链接
     H1e --> T5
     H2b -->|异常反馈| D1
     H3c -->|错误反馈| D1
-    G2 -->|DRV8301故障上报| D1
+    G3a -->|DRV8301故障| D1
+    U3 -->|指令队列| H1b
 
     %% 样式定义
     classDef init fill:#CDEDF6,stroke:#2B7A78,color:#17252A;
     classDef thread fill:#E6F7D9,stroke:#4CAF50,color:#1B5E20;
     classDef runtime fill:#FFF3CD,stroke:#FFC107,color:#7F4E00;
     classDef control fill:#E1D5E7,stroke:#9C27B0,color:#4A148C;
-    classDef interrupt fill:#F8D7DA,stroke:#DC3545,color:#721C24;
+    classDef interrupt fill:#FFE5B4,stroke:#FF9800,color:#E65100;
     classDef error fill:#FADBD8,stroke:#C0392B,color:#641E16;
 
     %% 分类标注
     class A,B,C,C1,C2,C3,D,E init
     class F,F1,F2,F2a,F2b,F2c,G,H,H1,H2,H3,H1a,H1b,H1c,H1d,H1e,H1f,H2a,H2b,H3a,H3b,H3c thread
     class T1,T2,T3,T4,T5,T6,T7,T8 control
-    class U1,U2,G1,G2,E1,E2 interrupt
+    class U1,U2,U3,G1,G2,G3,G3a,G4,G4a,E1,E2,E2a,E3,E3a interrupt
     class D1 error
 ```
+
+- 🟦 **初始化阶段（系统启动与配置）**
+  - 从 `系统启动` 开始：
+  - **从NVM加载配置参数**：用于加载之前保存的系统参数，比如电机配置、校准数据等。
+  - **系统初始化**：分为三个关键部分：
+    - `GPIO/PWM/USB/SPI/DMA` 等外设初始化。
+    - 中断配置，包括中断优先级设置、注册ISR。
+    - RTOS（实时操作系统）初始化，启动调度器、内存堆栈等。
+  - 最后，创建主线程并启动调度器。
+- 🟩 **主线程运行逻辑**
+  - **启动外设**：如 PWM 输出、电流采样ADC、定时器等。
+  - **创建三个辅助线程**：
+    - **通信处理线程**：USB/CAN/UART 接收、状态上传。
+    - **系统监控线程**：如温度、电压监控和故障检测。
+    - **电机状态管理线程**：周期更新各个轴的工作状态。
+  - 主线程任务完成后退出，系统进入实时运行状态。
+- 🟨 **实时运行阶段（主线程退出后的常驻线程）**
+  - **通信线程（H1）**
+    - 处理 USB/CAN/UART 指令。
+    - 上报状态数据。
+    - 解析控制指令，更新控制目标，进入控制链（与控制核心关联）。
+  - **系统监控线程（H2）**
+    - 定期采集温度、电压、错误标志等。
+    - 进行异常检测，发现问题后向 `错误处理D1` 汇报。
+  - **电机状态管理线程（H3）**
+    - 周期刷新电机状态，反馈给控制系统。
+    - 传递工作模式变化、错误信息等。
+- 🟪 **核心控制链（由定时器中断驱动）**：这是控制系统的“心脏”部分：
+  - 高精度定时器中断触发 → 控制周期开始。
+  - 启动软中断执行控制逻辑：
+    1. **采样数据**：读取编码器、电流传感器等。
+    2. **执行控制算法**：包括位置、速度、电流的闭环控制。
+    3. **更新PWM**：输出到电机驱动。
+    4. **周期安全检查与状态复位**。
+  - 若检测到异常，会立刻进入 `错误中断处理`，停机/保护。
+- 🟧 **辅助中断模块**：补充控制逻辑的中断事件：
+  - **通信中断（USB/CAN）**
+    - 接收外部控制数据，将其写入指令队列，后由通信线程解析执行。
+  - **GPIO 中断**
+    - 检测如 `DRV8301 nFAULT` 故障信号。
+    - 编码器的 Z 相中断，用于一次性校准（如原点对齐）。
+  - **定时器中断**
+    - 编码器边沿捕捉、PWM宽度捕捉，用于转速和位置测量。
+
+- Note:
+  - 注意为什么线程执行控制，而使用定时器中断？
+
+
+##### PID调节流程-FOC算法
+
+控制算法采用三级闭环架构，由上至下依次是位置控制、速度控制及电流控制。控制线程在每个控制周期内依次接收新的输入指令、读取编码器与电流传感器反馈、执行各级 PID 算法并更新控制输出。整个处理过程同时嵌入了防积分饱和、限幅、增益调度以及抗齿槽校准等措施，以保证高精度与鲁棒性。
+
+- **控制链整体流程**
+  ```mermaid
+  graph LR
+      A[上位机传入目标指令<br>位置/速度/电流] --> B[输入处理 & 轨迹规划<br>多模式滤波/Trap Traj / Mirror等]
+      B --> C[位置环：比较目标位置与当前编码器或估算值，计算位置误差]
+      C --> D[基于 P 控制（及抗齿槽补偿等）生成额外的速度期望]
+      D --> E[速度环：将位置环输出的期望速度与实际速度比较<br>以 PI 结构计算扭矩或电流期望]
+      E --> F[转换：扭矩期望经电机参数与扭矩常数转换为电流期望<br>ACIM 型电机需要按磁通进行缩放]
+      F --> G[电流环（FOC）：进入 d-q 坐标系，使用 PI 算法控制电流误差]
+      G --> H[计算出电压命令，经 SVPWM 模块变换生成 PWM 波形]
+  ```
+
+  其中：  
+  - **输入处理** 根据不同的输入模式（Passthrough、速度/扭矩斜坡、轨迹规划等）更新内部 setpoint，并对环路带宽、限幅等进行滤波。  
+  - **位置环** 在位置控制模式下，仅采用比例反馈（pos_gain），并配合环路漂移校正、齿槽补偿等措施。  
+  - **速度环** 除了乘以速度增益（vel_gain）得到一个初步扭矩命令外，还引入积分项（vel_integrator_torque_）进行误差累积，并采用防风控制（增益调度及抗饱和措施）。  
+  - **电流环** 则在 Field Oriented Control 模块内对 d-q 电流误差进行 PI 调控，积分状态受限于调制矢量饱和条件，并结合前馈项（如反电动势、R/L 前馈）保证系统响应。
+
+- **各环节详细描述**
+  - **位置环** PID（慢速闭环）
+    - **输入**：目标位置（pos_setpoint）与实际位置（编码器 / PLL 或 sensorless 估算）。
+    - **输出**：生成目标速度（vel_setpoint）的修正值。  
+  位置环常采用纯比例控制（P 控制），同时应对循环型 setpoints 做周期处理。部分模式下，还会将抗齿槽校准数据叠加到误差修正中。
+
+    ```cpp
+    // 注意：实际代码中会区分线性与循环型 setpoints，
+    // 同时引入防止漂移和增益调度（在误差较小时降低反馈增益）。
+    float pos_error = pos_setpoint - pos_estimate;
+    if(config_.circular_setpoints) {
+        pos_error = wrap_pm(pos_error, pos_wrap_value);
+    }
+    vel_setpoint = vel_setpoint_base + config_.pos_gain * pos_error;
+    ```
+
+  - **速度环** PID（中速闭环）
+    - **输入**：位置环生成的期望速度（含位置 P 补偿）、实际速度（来自编码器 / PLL 输出）。
+    - **输出**：计算得到一个扭矩期望，该值经转换后代表电流（iq_setpoint）。  
+    实现采用 PI 控制结构，其中积分项经过防饱和（如限幅或衰减）处理。示例代码概念如下：
+
+    ```cpp
+    float vel_error = vel_desired - vel_estimate;
+    vel_integrator_torque_ += (vel_integrator_gain * vel_error * dt);
+    vel_integrator_torque_ = std::clamp(vel_integrator_torque_,   -config_.  vel_integrator_limit, config_.vel_integrator_limit);
+    
+    // 这里还可能结合增益调度：在小误差时降低 P 作用    （gain_scheduling_multiplier）
+    float torque = torque_setpoint + (vel_gain *   gain_scheduling_multiplier *   vel_error) + vel_integrator_torque_;
+    ```
+
+    其中：
+    - **输入模式**：不同模式（如 VEL_RAMP、TRAP_TRAJ、MIRROR、TUNING 等）决定了如何更新 pos_setpoint/vel_setpoint/torque_setpoint；
+    - **限幅机制**：通过限制 torque 和 vel_setpoint 保证系统输出不超出安全范围；
+    - **错误检测**：例如当检测到超速（overspeed error）或 spinout（机电功率不匹配）时，立即触发错误状态。
+
+  - **电流环** PID（FOC 控制，高速闭环）
+    - **输入**：目标电流（iq_setpoint 与（可选）id_setpoint）与测量电流（ADC 采样并经过 Clarke / Park 变换得到的 Iq、Id）。
+    - **输出**：经过 PI 控制（包括前馈项）计算出 d-q 坐标系下的电压命令，再经逆 Park 变换和 SVPWM 算法转换为 PWM 波形。示例代码概念如下：
+
+    ```cpp
+    // 以 Iq 分量为例（Id 一般保持或跟踪一个预定的值，取决于算法与电机类型）
+    float Ierr_q = iq_setpoint - iq_measured;
+    v_current_control_integral_q_ += Ierr_q * (i_gain * dt);
+    
+    // 如果检测到过调制（输出矢量幅值超出限制），则对积分项做衰减处理（防积分风暴）
+    float mod_scalefactor = /* 根据当前输出模量计算的缩放因子 */;
+    if (mod_scalefactor < 1.0f) {
+        // 锁死或衰减积分
+        v_current_control_integral_q_ *= 0.99f;
+    }
+    vq = Vq_feedforward + (p_gain * Ierr_q + v_current_control_integral_q_);
+    ```
+
+    再经过类似下面的逆 Park 变换和 SVPWM 算法：
+
+    ```cpp
+    // 将 d-q 坐标的 mod_d, mod_q 转换至 α-β 坐标
+    float c_p = cos(pwm_phase);
+    float s_p = sin(pwm_phase);
+    float mod_alpha = c_p * mod_d - s_p * mod_q;
+    float mod_beta = c_p * mod_q + s_p * mod_d;
+    
+    // SVM 模块将 (mod_alpha, mod_beta) 映射为 PWM 定时（tA, tB, tC）
+    auto [tA, tB, tC, success] = SVM(mod_alpha, mod_beta);
+    ```
+
+    - 注意：实际控制中当前控制状态会用于前馈和负载预测，同时考虑 R/L 及反电动势的前馈补偿，这部分代码在 Motor::update() 和 FieldOrientedController::get_alpha_beta_output() 中均有所体现。
+
+    > **补充说明**：  
+    > - 所有各环节的 PID 参数（例如 pos_gain、vel_gain、vel_integrator_gain、当前环 p_gain、i_gain 等）均在系统初始化时从 NVM 加载，参数的调节直接影响闭环动态与稳定性。  
+    > - 另外，各输入模式（例如轨迹规划模式 TRAP_TRAJ）和抗齿槽校准（anticogging）措施，也会在 PID 控制链之前完成 setpoint 的预处理，从而保证控制指令平滑、鲁棒。
+
+- **控制线程运行示意**
+  控制线程与外设、ADC/FOC 中断之间的交互可以概述为：
+
+  ```mermaid
+  sequenceDiagram
+      participant 上位机
+      participant 通信线程
+      participant 控制线程
+      participant ADC/FOC中断
+      participant 编码器
+  
+      上位机->>通信线程: 发送目标指令（JSON /其它格式）
+      通信线程->>控制线程: 更新输入 setpoints（位置/速度/扭矩）
+      控制线程->>编码器: 获取位置、速度数据（包含 PLL 或 encoder 估算）
+      控制线程->>控制线程: 根据输入模式执行预处理、轨迹规划
+      控制线程->>控制线程: 【位置环】计算位置误差，更新 vel_setpoint
+      控制线程->>控制线程: 【速度环】计算速度误差，累加速度积分，生成扭矩（电流）期望
+      控制线程->>ADC/FOC中断: 将电流 setpoint 更新到 FOC 模块
+      ADC/FOC中断-->>控制线程: 采集反馈电流，触发电流环 PI 调控（FOC）
+      ADC/FOC中断->>PWM驱动: 根据 FOC 模块输出的电压命令生成 PWM 波形
+  ```
+
+  在此过程中：
+  - **输入处理**：不仅包括直接的 setpoint 传递，还包含滤波、斜坡更新、Trap Traj 插值、镜像模式等多种逻辑。
+  - **各环节反馈**：位置与速度误差分别影响低频与中频控制，而电流环运行在较高频率下，确保整个闭环响应及时。
+  - **错误保护与监控**：在控制线程内部不断检测传感器有效性、限幅状态及功率不匹配情况，一旦异常会触发保护（如停机或错误上报）。
 
 ##### 驱动程序开发
 - **编码器（ASA5147P）**：支持多种类型，包括： SPI, ABI, UVW, PWM；该电机驱动器支持两种模式：
@@ -451,21 +620,12 @@ graph TD
   - 使用stm32F4高级定时器TIM1 TIM8：用于三相电机驱动，减少电磁干扰；互补PWM输出，带死区时间配置（在向下计数时强制PWM为50%），防止上下桥臂直通短路
 - **舵机驱动（SG995）**：TIM2的PWM模式，控制舵机的角度。
 
-##### FOC算法
-
-##### 安全监控
-- 异常中断记录：通过STM32F4的NVIC中断向量表，记录异常中断发生的次数和时间；
-- 基于NCP18XH103F0的温度保护策略：温度过高导致MOS不受控，马上停止电机转动；
-- 电压、电流监测：一旦低压、过压、过流，立即停止电机转动；
-- 电机驱动芯片drv8301 nFAULT 输出：一旦引脚低电平，马上关断MOS
-  - drv8301：nFAULT引脚指示何时发生关断事件。这些事件包括过流、过温、过压或欠压。
-
 ##### 通信协议
 - **USB CDC/HID** **CAN 总线**
   - fibre 协议栈：一套上位机与下位机通信用的应用层协议。根据ymal文件内容生成相应的通信协议栈。
   - 数据类型：数据包的格式 流的格式
 - **UART 串口**：与外部传感器或树莓派通信。
-  - 串口通信协议：UART 921600 8N1，ASCII格式；只能发送数据，不能接收；
+  - 串口通信协议：UART 921600 8N1，ASCII格式；以100Hz频率持续发送电机位置和速度信息。；
 
 ##### 电机配置工具 UI
 - **参数配置工具**
@@ -514,7 +674,7 @@ graph TD
         - 右轮：(0, -0.0655, 0.02596)，绕 y 轴负方向旋转（axis="0 -1 0"）。
         - 轮间距：0.174 m（对称分布于 base_link 两侧）。
 
-<p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:35px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/robot_description.png" /></p>
+<p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:35px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/robot_description.png"/></p>
 
 - **Gazebo**：实现完整仿真环境；
   - **gazebo插件**：在生成的urdf插件中添加插件，才能生成仿真环境允许所需要的传感器数据；
@@ -556,9 +716,9 @@ graph TD
 
         </div>
 
-<p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:35px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/sim_tftree.png" /></p>
+<p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:35px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/sim_tftree.png"/></p>
 
-<p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:35px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/sim_gazebo.png" /></p>
+<p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:35px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/sim_gazebo.png"/></p>
 
 - **Cartographer + Navigation2**：实现地图构建与导航路径规划。
   - 地图构建：**Cartographer**；
@@ -599,11 +759,17 @@ graph TD
   - 地图浏览：实时地图更新、路径显示；
   - 控制功能：方向按钮、虚拟摇杆控制；
 
-<p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:35px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/sim_web.png" /></p>
+<p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:35px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/sim_web.png"/></p>
 
 ##### 🚗 实物部署与控制
 在完成SLAM仿真实验后，软件上的嵌合已经基本完成，接下来只需要将仿真时使用的gazebo产生的传感器数据更换为实物使用的传感器数据，并进行相应的控制算法调试；再将算法对机器人的控制通过Raspberry Pi与FOC驱动器的通信协议传递到两轮和舵机上。此外，因仿真时使用简单的两轮差速小车模型，实物搭建的轮子机器人需要进行更复杂的控制算法的调试。
 
+- **机器人启动逻辑**
+  - 启动IMU、Laser、Odometry节点：开始数据接收并发布；
+  - 启动运动控制节点：订阅IMU数据保持平衡，监听cmd_vel进行运动控制；
+  - 启动wheel robot节点：发布机器人描述以及各个link的tf变换；
+  - 启动cartographer节点：订阅激光雷达、IMU、Odometry数据，启动地图构建发布map数据；
+  - 启动web服务：发布cmd_vel运动控制指令，订阅map更新地图显示；
 - **传感器接入与驱动**
   - **AS5147P**：14位旋转编码器，用于电机位置反馈；
     - Raspbery Pi同电机驱动板的UART通信占用了Rapsberry的串口终端，会导致Raspberry无法进入系统；
@@ -630,10 +796,12 @@ graph TD
   - **YDlidar 点云处理**
     - 接收YDLIDAR模块传来的数据，进行解码；
     - 输出ROS laserscan消息，供其他节点使用；
-- **自主运动控制**
-  - 支持平衡控制算法：串级PID控制（速度环+位置环）；
-  - 平衡节点监听cmd_vel，修改target_linear_vel和target_angular_vel，从而实现运动控制；
-  - 支持本地导航 + 避障（融合雷达与IMU数据）。
+- **运动控制**
+  - 机器人自平衡：
+    - 平衡控制算法：串级PID控制（速度环+位置环 高度环）；
+    ...
+  - 机器人运动：
+    - 监听cmd_vel，修改target_linear_vel和target_angular_vel，从而实现运动控制；
 - **地图显示**
   - Raspbery Pi 远程桌面进行程序调试和地图显示
   - Web 控制台：地图显示、路径规划、控制指令显示；
@@ -711,179 +879,3 @@ Project Link: [MoonGrt/Wheel_Robot](https://github.com/MoonGrt/Wheel_Robot)
 [issues-url]: https://github.com/MoonGrt/Wheel_Robot/issues
 [license-shield]: https://img.shields.io/github/license/MoonGrt/Wheel_Robot.svg?style=for-the-badge
 [license-url]: https://github.com/MoonGrt/Wheel_Robot/blob/master/LICENSE
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
----
-
-# ODrive 系统完整流程及控制线程 PID 调节逻辑
-
-本文档详细描述了 ODrive 系统从启动初始化、线程管理到实时运行及中断协作的完整流程，同时重点介绍了控制线程中如何调 PID 的执行链。整体内容融合了以下两个方面：
-
-- **系统整体流程（启动、初始化、线程创建与管理、中断系统）**
-- **控制链中 PID 调节流程（位置/速度/电流闭环控制）**
-
----
-
-## 1. 系统整体流程
-
-```mermaid
-graph TD
-    A[系统启动] --> B[从 NVM 加载配置]
-    B --> C[常规初始化]
-    C --> C1[外设初始化<br>GPIO/PWM/ADC/定时器]
-    C --> C2[中断配置<br>优先级/看门狗]
-    C --> C3[系统初始化<br>时钟/RTOS/内存]
-
-    C3 --> D[创建主线程]
-    D --> E[启动系统调度器]
-    E --> F[主线程执行]
-    F --> F1[开启外设: ADC/PWM]
-    F1 --> F2[创建子线程]
-    F2 --> F2a[通信线程]
-    F2 --> F2b[监控线程]
-    F2 --> F2c[电机控制线程]
-    F2 --> G[删除主线程]
-
-    G --> H[进入实时运行阶段]
-
-    %% 子线程并发运行
-    subgraph 实时运行阶段
-        H1[通信线程] --> H1a[100Hz发送电机位置/速度]
-        H1 --> H1b[接收/解析指令]
-
-        H2[监控线程] --> H2a[周期监控电流/电压/温度]
-        H2a --> H2b[判断异常/上报错误/关闭PWM]
-
-        H3[电机控制线程] --> H3a[FOC 控制/PID 调节]
-        H3a --> H3b[更新PWM输出]
-    end
-
-    %% 中断系统
-    subgraph 中断系统
-        I1[PWM定时器中断] --> J1[触发ADC采样]
-        J1 --> K1[ADC中断<br>读取三相电流]
-        K1 --> K2[FOC 控制执行<br>Iq/Id PID 调节]
-
-        L1[USB中断] --> L2[接收USB数据 → 压入FIFO → 通信线程处理]
-        M1[DRV8301故障中断] --> H2b
-        N1[定时器同步中断 1kHz] --> H2a
-        O1[编码器中断] --> H3a
-    end
-
-    %% 交互线
-    L2 --> H1b
-    K2 --> H3a
-    H2b --> H3a
-    H3b --> I1
-```
-
-### 说明
-
-- **系统启动与初始化**
-  - **从 NVM 加载配置**：将用户及校准数据从非易失性存储器中读出。
-  - **常规初始化**：外设（GPIO、PWM、ADC、定时器）、中断（优先级设定、看门狗）及系统（时钟、RTOS、内存）初始化。
-
-- **线程创建与管理**
-  - **主线程**：启动后负责系统初始化以及各子线程创建，然后删除自身。
-  - **通信线程**：负责以 100Hz 的频率发送电机位置和速度，同时接收并解析上位机指令（如 JSON 格式数据）。
-  - **监控线程**：周期性（如 1kHz）监控电流、电压、温度，并处理 DRV8301 等故障情况。
-  - **电机控制线程**：执行 FOC 控制以及 PID 调节，通过采集电流、位置数据进行闭环控制，并更新 PWM 输出。
-
-- **中断系统**
-  - **PWM 定时器中断**：触发 ADC 采样，保证高精度电流采集，及时执行 FOC 控制中的电流环。
-  - **USB、DRV8301、定时器同步与编码器中断**：分别用于接收通信指令、故障处理、定时监控以及更新电机位置。
-
----
-
-## 2. 控制线程 PID 调节流程
-
-### 2.1 控制链整体流程
-
-ODrive 采用三级闭环控制结构，即从位置控制、速度控制到电流（FOC）控制，流程图如下：
-
-```mermaid
-graph TD
-    A[接收到目标位置/速度/电流指令] --> B[控制线程入口<br> Controller::update]
-    B --> C[位置环 PID<br>计算 vel_setpoint]
-    C --> D[速度环 PID<br>计算 iq_setpoint]
-    D --> E[电流控制传入 FOC 模块]
-    E --> F[FOC 控制 & 电流环 PID<br>生成 PWM 输出]
-```
-
-### 2.2 各环节详细描述
-
-- **位置环 PID (慢速闭环)**
-  - **输入**：目标位置（position setpoint）与当前位置（来自编码器或估算器）。
-  - **输出**：目标速度（velocity setpoint），通常仅采用比例控制（P 控制）。
-
-    ```cpp
-    float pos_error = pos_setpoint - pos_estimate;
-    vel_setpoint = pos_gain * pos_error;
-    ```
-
-- **速度环 PID (中速闭环)**
-  - **输入**：位置环输出的目标速度与实际速度。
-  - **输出**：目标电流（iq setpoint），通常采用 PI 控制结构以防止积分饱和。
-
-    ```cpp
-    float vel_error = vel_setpoint - vel_estimate;
-    integrator_vel += vel_error * dt;
-    float iq_setpoint = vel_gain * vel_error + vel_integrator_gain * integrator_vel;
-    ```
-
-- **电流环 PID（FOC控制） (高速闭环)**
-  - **输入**：目标电流与实际测量的电流（通过 ADC 采样，经过 Clarke 和 Park 变换得到的 Iq 和 Id）。
-  - **输出**：生成最终的电压命令，经过 SVPWM 算法转换为 PWM 波形驱动电机。
-
-    ```cpp
-    iq_error = iq_setpoint - iq_measured;
-    id_error = id_setpoint - id_measured;
-
-    // 基本 PI 调控
-    v_q = iq_kp * iq_error + iq_ki * iq_integrator;
-    v_d = id_kp * id_error + id_ki * id_integrator;
-    ```
-
-> **注意**：各 PID 参数（如 `pos_gain`、`vel_gain`、`vel_integrator_gain`、`iq_kp`、`iq_ki` 等）均从 NVM 配置加载，并在固件初始化阶段设定。这些参数的调整直接影响闭环动态响应和稳定性。
-
-### 2.3 控制线程运行示意（实时模式下）
-
-```mermaid
-sequenceDiagram
-    participant 上位机
-    participant 通信线程
-    participant 控制线程
-    participant ADC/FOC中断
-    participant 编码器
-
-    上位机->>通信线程: 发送指令（JSON格式）
-    通信线程->>控制线程: 传递目标位置/速度/电流
-    控制线程->>编码器: 读取位置、速度数据
-    控制线程->>控制线程: 执行位置/速度 PID<br>计算 iq_setpoint
-    控制线程->>ADC/FOC中断: 更新目标电流
-    ADC/FOC中断-->>控制线程: 提供实际电流采样反馈
-```
-
----
-
-## 3. 总结
-
-- **系统初始化阶段**：从 NVM 加载配置后完成外设、中断及系统初始化，启动主线程和系统调度器，然后创建并启动各个子线程。
-- **线程管理**：通信线程、监控线程与电机控制线程分别负责数据传输、故障监控和闭环 PID 控制任务。
-- **中断协同工作**：USB、定时器、编码器等中断降低了实时性任务的延迟，保证高频 ADC 采样与 FOC 控制运行稳定。
-- **控制线程 PID 调节**：分为位置环、速度环和电流环，每一层将上一级输出转换为更低层的目标量，最终通过 FOC 控制实现高精度电机驱动。
-
-<p align="right">(<a href="#top">top</a>)</p>

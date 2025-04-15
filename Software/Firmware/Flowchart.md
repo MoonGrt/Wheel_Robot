@@ -30,12 +30,12 @@ graph TD
         H1c --> H1f[UART轮询发送数据<br>电机速度/位置]
 
         H2[监控线程]
-        H2 --> H2a[采集系统状态<br>温度、电压、错误信号]
+        H2 --> H2a[采集系统状态<br>温度/电压/错误信号]
         H2a --> H2b[异常检测]
 
         H3[电机状态线程]
         H3 --> H3a[周期刷新<br>每个轴的状态信息]
-        H3a --> H3b[同步当前控制状态<br>工作模式 / 反馈变量]
+        H3a --> H3b[同步当前控制状态<br>工作模式/反馈变量]
         H3b --> H3c[转发错误信息]
     end
 
@@ -43,40 +43,50 @@ graph TD
     subgraph 控制链执行-核心定时器中断
         T1[高精度定时器中断<br>控制周期触发] --> T2[更新系统时隙]
         T2 --> T3[软件触发控制中断<br>调度控制计算流程]
-        T3 --> T4[触发采样及数据获取<br>电流 / 编码器 / 传感器数据]
-        T4 --> T5[执行实时控制算法回路<br>（位置 / 速度 / 电流）]
+        T3 --> T4[触发采样及数据获取<br>电流/编码器/传感器数据]
+        T4 --> T5[执行实时控制算法回路<br>（位置/速度/电流）]
         T5 --> T6[重置状态 & 检查安全条件]
-        T6 --> T7[执行闭环控制更新<br>状态估计、PID调节、PWM更新]
-        T7 --> T8[验证周期完整性 / 安全检查]
+        T6 --> T7[执行闭环控制更新<br>状态估计/PID调节/PWM更新]
+        T7 --> T8[验证周期完整性/安全检查]
         T5 -->|异常检测| D1[中断触发保护<br>停机/错误上报]
         T8 -->|异常检测| D1
     end
 
     %% 辅助中断
     subgraph 辅助中断
-        U1[USB/CAN 通信中断] --> U2[接收指令数据 → 写入数据队列] --> H1b
-        G1[DRV8301 故障中断<br>GPIO EXTI中断线] --> G2[检测故障信号<br>立即关 PWM / 上报错误]
-        E1[编码器/PWM 捕获中断<br>EXTI/TIM] --> E2[读取PWM信号宽度/记录编码器边沿] --> T4
+        U1[USB/CAN 通信中断]
+        U1 --> U2[接收指令数据]
+        U2 --> U3[写入数据队列]
+
+        G1[GPIO EXIT中断]
+        G1 --> G2[检测故障信号]
+        G2 --> G3[DRV8301 故障中断...<br>nFAULT 拉低...] --> G3a[断电/上报错误]
+        G2 --> G4[编码器 Z 相位中断<br>] --> G4a[编码器校准] --> T4
+
+        E1[辅助TIM中断]
+        E1 --> E2[编码器中断] --> E2a[记录编码器边沿] --> T4
+        E1 --> E3[PWM 捕获中断] --> E3a[读取PWM信号宽度] --> T4
     end
 
     %% 交互链接
     H1e --> T5
     H2b -->|异常反馈| D1
     H3c -->|错误反馈| D1
-    G2 -->|DRV8301故障上报| D1
+    G3a -->|DRV8301故障| D1
+    U3 -->|指令队列| H1b
 
     %% 样式定义
     classDef init fill:#CDEDF6,stroke:#2B7A78,color:#17252A;
     classDef thread fill:#E6F7D9,stroke:#4CAF50,color:#1B5E20;
     classDef runtime fill:#FFF3CD,stroke:#FFC107,color:#7F4E00;
     classDef control fill:#E1D5E7,stroke:#9C27B0,color:#4A148C;
-    classDef interrupt fill:#F8D7DA,stroke:#DC3545,color:#721C24;
+    classDef interrupt fill:#FFE5B4,stroke:#FF9800,color:#E65100;
     classDef error fill:#FADBD8,stroke:#C0392B,color:#641E16;
 
     %% 分类标注
     class A,B,C,C1,C2,C3,D,E init
     class F,F1,F2,F2a,F2b,F2c,G,H,H1,H2,H3,H1a,H1b,H1c,H1d,H1e,H1f,H2a,H2b,H3a,H3b,H3c thread
     class T1,T2,T3,T4,T5,T6,T7,T8 control
-    class U1,U2,G1,G2,E1,E2 interrupt
+    class U1,U2,U3,G1,G2,G3,G3a,G4,G4a,E1,E2,E2a,E3,E3a interrupt
     class D1 error
 ```
