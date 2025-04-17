@@ -11,7 +11,7 @@ from odrive.rich_text import RichText, Color, Style
 from PyQt5.QtGui import QIcon
 
 
-class ODriveGUI(QMainWindow):
+class PIDConfig(QMainWindow):
     def __init__(self):
         super().__init__()
         self.odrive = None
@@ -427,6 +427,6 @@ class ODriveGUI(QMainWindow):
 # 运行 PyQt 应用
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = ODriveGUI()
+    window = PIDConfig()
     window.show()
     sys.exit(app.exec())

@@ -10,7 +10,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 
 
-class ODriveReader(QWidget):
+class FOCConfig(QWidget):
     def __init__(self):
         super().__init__()
         self.odrive = None
@@ -273,6 +273,6 @@ class ODriveReader(QWidget):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    ex = ODriveReader()
+    ex = FOCConfig()
     ex.show()
     sys.exit(app.exec_())
