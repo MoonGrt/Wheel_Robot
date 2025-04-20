@@ -78,8 +78,8 @@ var app = new Vue({
             const x = joy.GetX() / 200 // 范围大概是 [-1, 1]
             const y = joy.GetY() / 200
 
-            const linear = y * 0.5
-            const angular = - x * 0.5
+            const linear = y * 1
+            const angular = - x * 1
 
             // console.log(linear, angular)
             if (this.connected) {

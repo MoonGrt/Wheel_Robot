@@ -908,6 +908,54 @@ graph TD
   - **YDlidar 点云处理**
     - 接收YDLIDAR模块传来的数据，进行解码；
     - 输出ROS laserscan消息，供其他节点使用；
+- **数据处融合 EKF**
+
+```mermaid
+flowchart TB
+    subgraph 初始化
+        A["初始化状态估计 x₀ (姿态/位置/速度)<br>初始化协方差 P₀<br>设定IMU噪声 Q, 里程计噪声 R"]
+    end
+
+    subgraph 预测阶段[IMU驱动预测]
+        B1["📥 IMU数据输入<br>(a: 加速度, ω: 角速度)"] --> B
+        B["IMU数据预处理<br>去除偏置/重力补偿"]
+        C["非线性状态预测<br>x̂ₖ⁻ = f(xₖ₋₁, aₖ, ωₖ, Δt)"]
+        D["计算雅可比矩阵<br>Fₖ = ∂f/∂x|xₖ₋₁"]
+        E["协方差预测<br>Pₖ⁻ = FₖPₖ₋₁Fₖᵀ + Q"]
+    end
+
+    subgraph 更新阶段[里程计数据融合]
+        F1["📥 里程计数据输入<br>(z_odom: 线速度/角速度)"] --> F
+        F["获取里程计数据"]
+        G["非线性观测模型<br>h(x̂ₖ⁻) = 预测的里程计输出"]
+        H["计算观测雅可比<br>Hₖ = ∂h/∂x|x̂ₖ⁻"]
+        I["计算卡尔曼增益<br>Kₖ = Pₖ⁻Hₖᵀ(HₖPₖ⁻Hₖᵀ + R)⁻¹"]
+        J["状态更新<br>x̂ₖ = x̂ₖ⁻ + Kₖ(z_odom - h(x̂ₖ⁻))"]
+        K["协方差更新<br>Pₖ = (I - KₖHₖ)Pₖ⁻"]
+    end
+
+    L[下一时刻 k+1]
+
+    A --> B
+    B --> C --> D --> E --> F
+    F --> G --> H --> I --> J --> K --> L
+    L --> B
+
+    style A fill:#f9f,stroke:#333
+    style B1 fill:#cce,stroke:#333,stroke-width:2px
+    style F1 fill:#cec,stroke:#333,stroke-width:2px
+    style B fill:#cbf,stroke:#333
+    style C fill:#cbf,stroke:#333
+    style D fill:#cbf,stroke:#333
+    style E fill:#cbf,stroke:#333
+    style F fill:#9f9,stroke:#333
+    style G fill:#9bf,stroke:#333
+    style H fill:#9bf,stroke:#333
+    style I fill:#9bf,stroke:#333
+    style J fill:#9bf,stroke:#333
+    style K fill:#9bf,stroke:#333
+```
+
 - **运动控制**
   - 机器人自平衡：
     - 平衡控制算法：串级PID控制（速度环+位置环 高度环）；
