@@ -262,10 +262,12 @@ class FOCConfig(QWidget):
 
             self.voltage_ax.clear()
             self.voltage_ax.plot(self.time, self.y_vol_data, 'r-')
+            self.voltage_ax.set_ylim(24, 30)
             self.voltage_canvas.draw()
 
             self.temperature_ax.clear()
             self.temperature_ax.plot(self.time, self.y_tem_data, 'b-')
+            self.temperature_ax.set_ylim(20, 60)
             self.temperature_canvas.draw()
 
             time.sleep(0.01)

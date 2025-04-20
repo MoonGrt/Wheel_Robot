@@ -44,7 +44,7 @@ class PIDConfig(QMainWindow):
         # 记录当前模式
         self.current_mode = "velocity"
         # 记录当前轴
-        self.current_axis = "axis0"
+        self.current_axis = "axis1"
 
         # 创建motor切换
         self.create_motor_selection(layout)
