@@ -68,484 +68,491 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-- [📦 硬件系统设计](#-硬件系统设计)
-  - [🔋 电源管理模块](#-电源管理模块)
-  - [🧩 FOC驱动器](#-FOC驱动器)
-  - [🐞 调试器](#-调试器)
-  - [🧲 磁编码器](#-磁编码器)
-- [🔧 结构设计与执行单元](#-结构设计与执行单元)
-  - [🎯 传感器选型](#-传感器选型)
-  - [⚙️ 动力系统](#-动力系统)
-  - [🧱 外壳与机构](#-外壳与机构)
-- [💻 软件系统设计](#-软件系统设计)
-  - [⚡ FOC电机控制子系统](#-FOC电机控制子系统)
-  - [🤖 ROS系统集成](#-ROS系统集成)
-  - [🌐 Web控制台](#-web控制台)
+- [📦 Hardware System Design](#-Hardware-System-Design)
+  - [🔋 Power Management Module](#-Power-Management-Module)
+  - [🧩 FOC Driver](#-FOC-Driver)
+  - [🐞 Link Debugger](#-Link-Debugger)
+  - [🧲 Magnetic Encoder](#-Magnetic-Encoder)
+- [🔧 Structural Design and Device Selection](#-Structural-Design-and-Device-Selection)
+  - [🧱 Housing and Structure](#-Housing-and-Structure)
+  - [⚙️ Power System](#-Power-System)
+  - [🎯 Sensor Selection](#-Sensor-Selection)
+- [💻 Software System Design](#-Software-System-Design)
+  - [⚡ FOC Motor Control Subsystem](#-FOC-Motor-Control-Subsystem)
+  - [🤖 ROS System Integration](#-ROS-System-Integration)
+  - [🌐 Web Console](#-Web-Console)
 
-### 硬件选型
-| 模块       | 组件/芯片型号        | 功能描述                             | 器件参数                             |
-|------------|----------------------|--------------------------------------|--------------------------------------|
-| 主控       | 树莓派               | 搭载ROS，负责SLAM算法                | -                                    |
-|            | STM32F405            | 专用于电机控制（FOC、PID）          | 主频180MHz，Cortex-M4内核           |
-| 传感器     | AS5147P              | 超高速磁性旋转位置传感器            | 16位分辨率，SSI接口                  |
-|            | CMP10A              | IMU传感器                            | 三轴陀螺仪、三轴加速度计，三轴磁力计和气压计 |
-|            | YDLIDAR X3           | 激光雷达                             | 360°扫描，测距范围0.12-8m            |
-| 电源管理   | 锂电池               | -                                    | 24V，3000mAh，XT60插口               |
-|            | TPS54160 + RT9193/LP5907 | 24V→12V/5V→3.3V两级降压稳压         | TPS54160-Buck, RT9193-VCC, LP5907-AVCC |
-|            | FSMD012              | 自恢复保险丝-过流保护               | 50A峰值电流                          |
-|            | NCP18XH103F0         | 实时监测电路温度，防止过热损害      | 10kΩ B值-25℃/100℃-3455K             |
-|            | LM5109B + RTP50W     | 高速半桥驱动器控制耗散电阻          | 5V-18V驱动器 + 50W功率电阻，2ohm      |
-|            | SS34                 | 肖特基二极管                        | 3A，40V，低压降                      |
-|            | SMAJ26CA             | TVS二极管，浪涌抑制保护             | 30V，双向，400W                      |
-|            | 1812电容×10         | 去耦滤波                             | 50V，47µF，陶瓷电容                  |
-| 电机驱动   | DRV8301              | 无刷直流BLDC电机驱动芯片            | 4.5V-60V，峰值电流4A                 |
-|            | KNY3406C             | 场效应管（MOSFET）                  | Vds=40V，Id=60A，Rds(on)=6mΩ        |
-|            | SG995                | 舵机，位置控制                      | 180°转角，扭矩`13kg.cm @ 6V`          |
-|            | PM3510               | 平台无刷电机                        | 1250rpm 0.11N.m                      |
+### Hardware Selection
 
-### 📦 硬件系统设计
+| Module | Component/Chip Model | Functional Description | Device Parameters |
+| ------------ | ---------------------- | -------------------------------------- | --------------------------------------|
+| Master | Raspberry Pi | With ROS, responsible for SLAM algorithms | - |
+| | STM32F405 | Dedicated to motor control (FOC, PID) | 180MHz, Cortex-M4 core |
+| Sensors | AS5147P | Ultra-high-speed Magnetic Rotary Position Sensors | 16-bit resolution, SSI interface |
+| | CMP10A | IMU Sensor | 3-axis gyroscope, 3-axis accelerometer, 3-axis magnetometer and barometer |
+| | YDLIDAR X3 | LIDAR | 360° scanning, range 0.12-8m |
+| POWER MANAGEMENT | LITHIUM BATTERY | - - | 24V, 3000mAh, XT60 socket |
+| | TPS54160 + RT9193/LP5907 | 24V→12V/5V→3.3V Two-stage Buck Regulator | TPS54160-Buck, RT9193-VCC, LP5907-AVCC |
+| | FSMD012 | Resettable Fuse - Overcurrent Protection | 50A Peak Current |
+| | NCP18XH103F0 | Real-time monitoring of the circuit temperature, to prevent overheating damages | 10kΩ B-value -25°C /100°C-3455K |
+| | LM5109B + RTP50W | High Speed Half Bridge Driver Control Dissipation Resistor | 5V-18V Driver + 50W Power Resistor, 2ohm |
+| | SS34 | Schottky Diode | 3A, 40V, Low Dropout |
+| | SMAJ26CA | TVS Diode, Surge Suppression Protection | 30V, Bi-Directional, 400W |
+| | 1812 Capacitor × 10 | Decoupling Filter | 50V, 47µF, Ceramic Capacitor |
+| Motor Driver | DRV8301 | Brushless DC BLDC Motor Driver Chip | 4.5V-60V, Peak Current 4A |
+| | KNY3406C | Field Effect Tubes (MOSFETs) | Vds=40V, Id=60A, Rds(on)=6mΩ |
+| | SG995 | Servo, Position Control | 180° Rotation Angle, Torque `13kg.cm @ 6V` |
+| | PM3510 | Platform Brushless Motor | 1250rpm 0.11N.m |
+
+### 📦 Hardware System Design
 
 <p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document\images\Hardware.png" width="800"/></p>
 
-#### 🔋 电源管理模块
+#### 🔋 Power Management Module
 
-电源管理模块将电池能量，经过降压稳压滤波，分配给Raspberry Pi、电机驱动器、传感器（IMU、Lidar、编码器）、动力系统（BLDC电机、舵机）等模块，确保各模块的电源稳定运行。
+The power management module distributes the battery energy, after buck regulator filtering, to the modules of Raspberry Pi, motor driver, sensors (IMU, Lidar, encoder), power system (BLDC motor, servo), etc., to ensure the power supply of each module operates stably.
 
-- **电池管理系统（BMS）**
-  - 使用 **24V 3000mAh 锂电池组**（XT60 接口）作为主电源。
-    - 29.4V 2A 充电器
-    - 内置智能保护板，输出稳定，寿命更长：
-      - 过流保护：防止电池放电电流过大
-      - 短路保护：产品在发生短路时自动保护
-      - 过压保护：防止电池充放电电压过高
-      - 过充保护：防止电池过度充电
-      - 过放保护：防止电池过度放电
-      - 防反保护：反插时自动停止工作
-  - 10A 钮子开关（总开关：用于控制电池充电/放电；紧急断开电池） + 16AWG 导线
-  - 焊接部分用绝缘绿油覆盖 + 导线连接部分用热缩管/绝缘胶带
+- **Battery Management System (BMS)**
+  - Uses **24V 3000mAh Li-ion battery pack** (XT60 interface) as the main power source.
+    - 29.4V 2A charger
+  - Built-in intelligent protection board for stable output and longer life:
+  - Overcurrent protection: prevents the battery from discharging too much current
+  - Short-circuit protection: the product is automatically protected in the event of a short-circuit
+  - Over-voltage protection: prevents the battery from charging and discharging too high a voltage
+  - Over-charging protection: prevents the battery from being over-charged
+  - Over-discharging protection: prevents the battery from being over-discharged
+  - Anti-backlash protection: stops the work automatically in case of reverse plugging
+  - 10A Button Switch (main switch: for controlling battery charging/discharging; emergency disconnecting the battery) + 16AWG conductor
+  - Soldering part is covered with insulating green oil + Heat-shrinkable tubing/insulation tape is used for connecting part of the conductor
 
-- **电压转换**
-  - **两级降压架构**：
-    - 电源24V：通过功率MOS直接供电BLDC电机、BUCK降压电路、电源电压采集电路等模块。
-    - 第一级：TPS54160（24V→12V，供电耗散电阻；24V→5V：供电舵机、Raspberry、LDO）(输出电流1.5A，开关峰值限制电流1.7~2.3A)
-      - TPS54160 配置参考 [德州仪器官方设计工具](https://www.ti.com.cn/product/cn/TPS54160#tech-docs)
-    - 第二级：RT9193（5V→3.3V，LDO线性稳压，VCC，供电MCU、编码器芯片、电机驱动芯片）、LP5907（3.3V→5V，稳压器，AVCC，供电模拟端温度采样）
-  - **去耦滤波网络**：10×1812陶瓷电容（50V/47µF）+ 1812陶瓷电容（63V/47µF）
-    - 将与TVS二极管最近的电容改为63V/47µF，防止上电时的浪涌现象导致电容击穿。
-  - **隔离地**：模拟地/功率地与数字地隔离，避免信号干扰。
+- **Voltage Conversion**
+  - **Two-stage Bucking Architecture**:
+  - Power Supply 24V: Power supply the BLDC motors, BUCK step-down circuits, power supply voltage acquisition circuits, and other modules directly through the power MOS.
+    - First stage: TPS54160 (24V→12V, power supply dissipative resistor; 24V→5V: power supply servo, Raspberry, LDO) (Output current 1.5A, switching peak limiting current 1.7~2.3A)
+  - TPS54160 Configuration Reference [Texas Instruments Official Design Tools](https://www.ti.com.cn/ product/cn/TPS54160#tech-docs)
+  - Stage 2: RT9193 (5V→3.3V, LDO linear regulator, VCC, power supply MCU, encoder chip, motor driver chip), LP5907 (3.3V→5V, voltage regulator, AVCC, power supply analogue end temperature sampling)
+  - **Decoupling filter network**: 10 × 1812 ceramic capacitors (50V/47µF) + 1812 ceramic capacitors (63V/47µF)
+  - Changing the capacitor closest to the TVS diode to 63V/47µF prevents the capacitor from breaking down due to the surge phenomenon during power-up.
+  - **Isolated Ground** - The analogue/power ground is isolated from the digital ground to avoid signal interference.
 
-- **电路保护设计**
-  - **过流保护**：FSMD012自恢复保险丝（48V/40A）
-  - **温度监测**：10kohm NCP18XH103F0热敏电阻（B值-25℃/100℃-3455K）
-  - **反接保护**：SS34肖特基二极管（40V/3A）
-  - **软启动保护**：TPS54160 软启动设置引脚外接 6.8n电容（电容值越大，启动越缓慢）
-  - **瞬态抑制**：SMAJ26CA（反向截止电压(Vrwm)：26V；钳位电压：42.1V；峰值脉冲电流(Ipp)：9.5A）、旁路电阻（10Ω）
-    - 之前使用的SMAJ30CA，钳位电压约为 48.4V，浪涌电流非常大，在TVS反应前，电压瞬间升高至电容击穿电压以上，导致与TVS最近的电容击穿。（电池输出电压为24V~29V）
-    - 之前使用3.3Ω的电阻，对浪涌抑制能力有限
-  - **LM5109B** 高速半桥驱动器 + **RTP50W** 2Ω/50W 耗散电阻，提升电机系统稳定性。
-    - 如果没有功率耗散电阻，则会在减速期间将多余的功率回充到供电电源，以达到所需的减速扭矩。如果供电电源不能够吸收掉这些能量（一般使用电池供电才可以吸收这些能量），母线电压将不可避免地升高。这有可能造成开关电源被损坏。本设计中虽然使用电池供电，但仍然使用 RTP50W 耗散电阻，以提升电机系统稳定性。
-    - 功率电阻的功率选择取决于您对电机的配置和电机减速时产生的峰值功率或者平均减速功率。为了安全起见，需要考虑电机的转速和电机所能承受的电流。当以最大速度和最大电机电流制动时，功率耗散电阻中消耗的功率可以计算为： P_brake = V_emf * I_motor 其中 V_emf = motor_rpm / motor_kv。在本次设计中，使用 1250rpm 45rmp/v 0.93A 的 PM3510 电机，则 P_brake = 1250 / 45 * 0.53 = 25.83W。
+- **Circuit Protection Design**
+  - **Overcurrent Protection**: FSMD012 self-resetting fuse (48V/40A)
+  - **Temperature Monitoring**: 10kohm NCP18XH103F0 thermistor (B-value -25℃/100℃-3455K)
+  - **Reverse Connection Protection**: SS34 Schottky diode (40V/3A)
+  - **Soft Start Protection **: TPS54160 soft-start setting pin external 6.8n capacitor (the larger the capacitance value, the slower the startup)
+  - **Transient Suppression**: SMAJ26CA (reverse cutoff voltage (Vrwm): 26V; clamp voltage: 42.1V; peak pulse current (Ipp): 9.5A), bypass resistor (10Ω)
+  - Previously used SMAJ30CA with clamp voltage was about 48.4V, the inrush current was so high that the voltage instantaneously rose above the capacitor breakdown voltage before the TVS reacted, causing the capacitor nearest the TVS to break down. (Battery output voltage is 24V~29V)
+  - Previously used 3.3Ω resistor with limited inrush suppression
+  - **LM5109B** High Speed Half Bridge Driver + **RTP50W** 2Ω/50W Dissipative Resistor to improve motor system stability.
+    - Without power dissipation resistors, excess power is charged back to the supply during deceleration to achieve the desired deceleration torque. If the power supply is not able to absorb this energy (which is usually the case with battery power), the bus voltage will inevitably rise. This may cause damage to the switching power supply. In this design, although battery power is used, RTP50W dissipative resistors are still used to improve the stability of the motor system.
+    - The power selection of the power resistor depends on your configuration of the motor and the peak power or average deceleration power generated when the motor decelerates. To be safe, you need to consider the speed of the motor and the current the motor can handle. When braking at maximum speed and maximum motor current, the power dissipated in the power dissipation resistor can be calculated as: P_brake = V_emf * I_motor where V_emf = motor_rpm / motor_kv. In this design, using a PM3510 motor with 1250rpm 45rmp/v 0.93A, P_brake = 1250 / 45 * 0.53 = 25.83W.
 
-#### 🧩 FOC驱动器
 
-基于STM32F4系列微控制器的双电机FOC驱动方案，支持无刷电机矢量控制，集成编码器接口、HALL传感器、CAN通信和多种外设接口。它结合了强大的微控制器与专用驱动芯片，实现了精准、高响应的闭环控制。
+#### 🧩 FOC Driver
+
+The dual motor FOC driver solution based on STM32F4 series microcontroller supports brushless motor vector control with integrated encoder interface, HALL sensors, CAN communication and multiple peripheral interfaces. It combines a powerful microcontroller with a dedicated driver chip to achieve accurate and highly responsive closed-loop control.
 
 <p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Hardware\FOC\Document\3D_ODrive.png" width="500"/></p>
 
-- **主要功能模块**
-  - **主控单元**
-    - **核心芯片**：STM32F405VGT6（ARM Cortex-M4内核，主频168MHz，1MB Flash，128KB SRAM）
-    - **时钟系统**：8MHz晶体振荡器
-    - **调试接口**：SWD（SWCLK/SWDIO）
-    - **存储器**：W25Q32JV SPI Flash
-  - **层级结构**：SIG-PWR-GND-SIG
-    - 顶层：信号层+铺铜GND
-    - 内1层：走少量信号+铺铜VCC
-    - 内2层：电源层铺铜GND
-    - 底层：信号层+铺铜GND
-  - **电机驱动模块**
-    - **驱动芯片**：DRV8301DCAR×2，支持双电机控制
-    - **功率级**：
-      - 预驱电路：KNY3406C MOSFET ×12
-      - 电流采样：0.5mΩ低侧电阻
-      - 提供死区控制、可编程门极驱动能力
-    - **保护设计**：
-      - SMAJ30CA TVS二极管
-      - 2.2Ω门极驱动电阻
-  - **传感器与反馈**
-    - **位置检测**：
-      - 编码器接口：ENC_A/B/Z信号
-      - HALL传感器接口：GH/GL/SH/SL信号
-    - **温度监测**：M0_TEMP/M1_TEMP/AUX_TEMP热敏电阻接口
-    - **电压监测**：
-  - **通信接口**
-    - **CAN总线**：SN65HVD232DR收发器
-    - **USB**：CH340K USB转串口
-    - **扩展接口**：
-      - SPI：MOSI/MISO/SCK/CS
-      - I2C：SCL/SDA
-      - UART：TX1/RX2
-  - **电源管理**
-    - **输入电源**：
-      - 电池输入：24V DCBUS BUCK降压电路
-      - USB供电：Type-C接口
-    - **稳压电路**：
-      - 3.3V LDO：LP5907MFX-3.3
-      - 5V LDO：RT9193-33GB
-    - **滤波设计**：
-      - 多级LC滤波
-      - 陶瓷电容阵列
+- **Main Functional Modules**
+  - **Master Control Unit**
+    - **Kernel Chip**: STM32F405VGT6 (ARM Cortex-M4 core, 168MHz, 1MB Flash, 128KB SRAM)
+    - **Clock System**: 8MHz Crystal Oscillator
+    - **Debug Interface**: SWD (SWCLK/ SWDIO)
+    - **Memory**: W25Q32JV SPI Flash
+    - **Layer structure**: SIG-PWR-GND-SIG
+      - Top layer: Signal layer + copper-laying GND
+      - Inside layer 1: small amount of signals + copper-laying VCC
+      - Inside layer 2: Power supply layer with copper-laying GND
+      - Bottom layer: Signal layer with copper-laying GND
+  - **Motor Driver Module**
+    - **Driver chip**: DRV8301DCDC **: DRV8301DCAR × 2, support dual motor control
+    - **Power Stage**:
+      - Pre-Drive Circuit: KNY3406C MOSFET × 12
+      - Current Sampling: 0.5mΩ Low Side Resistor
+      - Provide Deadband Control, Programmable Gate Drive Capability
+  - **Protection Design**:
+    - SMAJ30CA TVS Diode
+    - 2.2Ω Gate Drive Resistor
+  - **Sensor and Feedback**
+    - **Position Detection**:
+      - Encoder Interface: ENC_A/B/Z signals
+      - HALL Sensor Interface: GH/GL/SH/SL signals
+    - **Temperature Monitoring**: M0_TEMP/M1_TEMP/AUX_TEMP thermistor interface
+    - **Voltage Monitoring**:
+  - **Communication Interfaces**
+    - **CAN Bus**: SN65HVD232DR transceiver
+    - **USB**: CH340K USB to Serial
+    - **Expansion Interface**:
+      - SPI: MOSI/MISO/SCK/CS
+      - I2C: SCL/SDA
+      - UART: TX1/RX2
+  - **Power Management**
+    - **Input Power**:
+      - Battery Input: 24V DCBUS BUCK Buck circuit
+      - USB power supply: Type-C interface
+    - **Voltage regulator circuit**:
+      - 3.3V LDO: LP5907MFX-3.3
+      - 5V LDO: RT9193-33GB
+  - **Filtering design**:
+    - Multi-stage LC filtering
+    - Ceramic capacitor array
 
-- **关键设计特性**
-  - **双电机架构**：两个独立DRV8301驱动芯片实现双路FOC控制
-  - **精密采样**：
-    - 40nF差分电容用于电流采样滤波
-    - 18kΩ/133kΩ精密电阻网络
-  - **安全保护**：
-    - NFAULT故障检测电路
-    - 死区时间控制（DTC=150kΩ）
+- **Key design features**
+  - **Dual-motor architecture**: two independent DRV8301 driver chips Enables dual FOC control
+  - **Precision Sampling**:
+    - 40nF differential capacitor for current sampling filtering
+    - 18kΩ/133kΩ precision resistor network
+  - **Safety Protection**:
+    - NFAULT Fault Detection Circuitry
+    - Dead Time Control (DTC=150kΩ)
 
-- **物理接口**
+- **Physical interface**
 
 <div style="width: auto; display: table; margin: auto;">
 
-| 接口类型       | 功能描述                    |
-|----------------|----------------------------|
-| FPC-6 P        | 下载、调试接口              |
-| 2*20排母       | 树莓派接口                  |
-| Type-C         | USB通信                    |
+| Interface Type | Function Description |
+| ----------------|----------------------------|
+| FPC-6 P | Download, Debug Interface |
+| 2*20 row mother | Raspberry Pi Interface |
+| Type-C | USB Communication |
 
 </div>
 
-- **PCB设计特点**
-  - 分层地平面：PGND（功率地）/AGND（模拟地）/GND（数字地）分离
-  - 大电流路径：1oz铜厚 20~50mil宽，覆铜加强散热
-  - 测试点：TP1-TP6方便关键信号测量
+- **PCB Design Features**
+  - Layered Ground Plane: PGND (Power Ground)/AGND (Analogue Ground)/GND (Digital Ground) Separation
+  - High Current Path: 1oz Copper Thickness 20~50mil Wide, Copper Cladding to Enhance Heat Dissipation
+  - Test Points: TP1-TP6 for easy measurement of critical signals
 
-- **版本**
+- **Version**
 
 <p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document\images\FOC-bottom.jpg" width="500"/></p>
 
 
-#### 🐞 调试器
-本电路基于STM32F103CBT6微控制器实现调试器功能，兼容STLink V2和DAPLink固件，支持Type-C USB接口和SWD/JTAG调试。主要目的：迷你化（11mm x 26mm）、便携化（将SWD和UART结合用FPC-6接口，方便调试器与主控连接，而不是用杜邦线一根一根连接）。
+#### 🐞 Link Debugger
+This circuit implements the debugger function based on STM32F103CBT6 microcontroller, compatible with STLink V2 and DAPLink firmware, supporting Type-C USB interface and SWD/JTAG debugging. Main purpose: miniaturisation (11mm x 26mm), portability (combining SWD and UART with FPC-6 interface, easy to connect the debugger to the master instead of connecting them one by one with Dupont cable).
 
 <p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Hardware\Link\Document\3D_Link.png" width="300"/></p>
 
-- **主要模块**
-  - **电源模块**
-    - **LDO电路**：5V转3.3V（型号662K）
-    - **滤波电容**：输入：1µF；输出：100nF
-    - **电源指示灯**
-    - **电源保护**：BSMD0805-100-6V，PPTC自恢复保险丝，用于防止过流。
-  - **主控芯片**
-    - **型号**：STM32F103CBT6（72MHz，128KB Flash，64KB SRAM）
-    - **时钟源**：8MHz晶振配22pF负载电容
-  - **外围电路**
-    - **复位电路**：10kΩ上拉电阻 + 100nF滤波电容
-    - **LED指示灯**：电源指示、调试状态指示、串口通信指示
-    - **电源采集**：将电源的一半电压值采集到ADC输入MCU
-  - **连接器**
-    - **USB接口**：Type-C USB接口
-    - **FPC接口**：6Pin，UART+SWD接口，
-    - **调试接口**：4Pin SWD标准接口，用于调试器的固件烧录
-- **特殊设计**
-  - **DTC143ZCA**：数字晶体管：用于检测 VBUS 是否有效，从而控制 USB_RENU 信号
-    - R10、R15、R13 等电阻与 Q1 配合，形成一个简单的电压检测与拉低控制。当 VBUS 检测到 5V，Q1 导通，USB_RENU 被拉高（或拉低），提示MCU "USB插入检测"。
+- **Main Module**
+  - **Power Supply Module**
+    - **LDO Circuit**: 5V to 3.3V (Model 662K)
+    - **Filter Capacitor**: Input: 1µF; Output: 100nF
+    - **Power Indicator**
+    - **Power Supply Protection**: BSMD0805-100-6V, PPTC Self-Recovering Fuse for overcurrent prevention.
+  - **Master Chip**
+    - **Ctrl Unit**: STM32F103CBT6 (72MHz, 128KB Flash, 64KB SRAM)
+    - **Clock Source**: 8MHz crystal with 22pF load capacitor
+  - **Peripheral Circuitry**
+    - **Reset Circuitry**: 10kΩ Pull-up Resistor + 100nF Filter Capacitor
+    - **LEDs Indicator**: Power indicator, debug status indicator, serial communication indicator
+    - **Power Acquisition**: Acquisition of half of the voltage value of the power supply to the ADC input to the MCU
+  - **Connector**
+    - **USB Interface**: Type-C USB interface
+    - **FPC Interface**: 6Pin, UART+SWD interface,
+    - **Debug Interface**: 4Pin SWD standard interface for firmware burning for debugger
+- **Special Design**
+  - **DTC143ZCA**: digital transistor: used to detect whether VBUS is valid or not, so as to control the USB_RENU signal
+  - Resistors such as R10, R15, and R13 are used in conjunction with Q1, to form a simple voltage detection and pull-down control. When VBUS detects 5V, Q1 conducts and USB_RENU is pulled high (or low), prompting the MCU for ‘USB insertion detection’.
 
-#### 🧲 磁编码器
-高精度磁性旋转位置传感器设计的非接触式编码器，兼容AS5147P、AS5047P，适用于电机位置检测，支持多种输出模式，具备抗干扰和高温工作特性。AS5147P自带一个LDO，因此不需要额外的LDO。（主要作用：连接/焊接编码器芯片，给编码器芯片供电-电源保护，给主控提供编码器接口用于连接）
+#### 🧲 Magnetic Encoder
+Non-contact encoder with high precision magnetic rotary position sensor design, compatible with AS5147P, AS5047P, suitable for motor position detection, supports multiple output modes, with anti-interference and high temperature working characteristics.AS5147P comes with an LDO, so no extra LDO is needed.(Main function: connect/ (Main functions: connecting/welding encoder chip, supplying power to encoder chip - power protection, providing encoder interface to master control for connection)
 
 <p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Hardware\Encoder\Document\3D_AS5147P.png" width="150"/></p>
 
-- **核心特性**
-  - **分辨率**：14位绝对位置输出（0.022°精度）
-  - **接口支持**：
-    - SPI（SCK/SDI/SDO/CS）
+- **Core Features**
+  - **Resolution**: 14-bit absolute position output (0.022° accuracy)
+  - **Interface Support**:
+    - SPI (SCK/SDI/SDO/CS)
     - ABZ
     - UVW
-    - PWM脉冲宽度调制
-  - **工作电压**：3.3V/5V宽压兼容
-    - 提供拨码开关供用户选择输入电压模式
-  - **机械特性**：360°无接触旋转检测
-- **硬件设计要点**
-  - **抗干扰设计**
-    - 电源滤波：100nF陶瓷电容并联
-    - 信号隔离：磁栅与PCB走线正交布局
-  - **防护设计**
-    - SMFJ5.0A：静电和浪涌保护(TVS/ESD)
-    - LED：指示电源状态
-  - **尺寸设计**：结合机械设计，要嵌入外壳，尺寸为26mm
+    - PWM Pulse Width Modulation
+  - **Operating Voltage**: 3.3V/5V Wide Voltage Compatible
+    - Provide DIP switches for user to select input voltage mode
+  - **Mechanical characteristics**: 360° contactless rotation detection
+- **Hardware Design Points**
+  - **Anti-Interference Design**
+    - Power Filtering: 100nF ceramic capacitors in parallel
+    - Signal Isolation: Magnetic Grids are laid out orthogonally to PCB alignment
+  - **Protection Design**
+    - SMFJ5.0A: Static and Surge Protection (TVS/ESD)
+    - LEDs: Indicates the power supply status
+  - **Size Design**: Combined with the Mechanical design, to be embedded in the housing, size 26mm
 
 ---
 
-### 🔧 结构设计与硬件选型
+### 🔧 Structural Design and Device Selection
 
 <p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/3D-Structure_Exposure.png" width="500"/></p>
 
-#### 🧱 外壳与结构
-- **3D 打印外壳**
-  - 结构：模块化拼装，带快拆接口，便于维护和功能拓展。
-  - 内部预留电池仓、电路板固定孔位、散热设计。
-  - 结构件间预留0.2mm的公差
-  - Base：
-    - 材质：X树脂（大件，节约成本）
-    - 厚度：3mm
-    - 结构：
-      - 中间装配凸台固定主控板和驱动板
-      - 两侧固定舵机
-      - 前后开口暴露主控板、驱动板接口以及钮子开关固定孔位。
-      - 底部：中间下沉固定IMU模块；两侧预留Battery Case的滑槽卡扣孔位。
-      - 预留连接的螺纹孔、螺栓沉头孔
-  - Cover：
-    - 材质：X树脂（大件，节约成本）
-    - 厚度：3mm
-    - 结构：
-      - Base 固定孔位
-      - 装配凸台固定ydlidar，中间下沉固定ydlidar驱动板
-      - 预留连接的螺纹孔、螺栓沉头孔
-  - Battery Case：
-    - 材质：X树脂（大件，节约成本）
-    - 厚度：3mm
-    - 结构：
-      - 中间下陷固定电池
-      - 两侧部分上凸形成与Base的卡扣
-      - 前后面右上角开孔，预留电池线孔位
-      - 预留连接的螺纹孔、螺栓沉头孔
-  - Arm：
-    - 材质：PLA
-    - 厚度：8mm
-    - 结构：
-      - 固定舵机和Motor Case
-      - Arm间轴承连接
-      - 预留电机线、编码器线空间
-      - 控制电机径向磁铁同编码器的距离（<1mm）
-      - 预留连接的螺纹孔、螺栓沉头孔
-  - Motor Case：
-    - 材质：PLA
-    - 厚度：3mm
-    - 结构：
-      - 固定电机、磁编码器
-      - 预留轴承空间
-      - 外部内陷，预留橡胶圈空间
-      - 预留连接的螺纹孔、螺栓沉头孔
+#### 🧱 Housing and Structure
+- **3D printed housing**
+  - Structure: modular assembly with quick release interface for easy maintenance and function expansion.
+  - Internal reserved battery compartment, circuit board fixing holes, heat dissipation design.
+  - Reserve 0.2mm tolerance between structural parts
+  - Base:
+    - Material: X resin (large parts, cost saving)
+    - Thickness: 3mm
+    - Structure:
+      - Middle assembly tabs to fix the main control board and driver board
+      - Fixed servos on both sides
+      - Front and back openings to expose the main control board, driver board interface, and knob switch fixing holes.
+      - Bottom: Sinking in the middle to fix the IMU module; both sides are reserved for the slots of the Battery Case.
+      - Reserved threaded holes and countersunk holes for bolts
+  - Cover:
+    - Material: X resin (large part, cost saving)
+    - Thickness: 3mm
+    - Structure:
+      - Base fixing holes
+      - Assembly tabs to fix ydlidar, sunk in the middle to fix ydlidar driver board
+      - Reserved threaded holes and countersunk holes for bolts
+  - Battery Case:
+    - Material: X resin (large part, cost saving) - Thickness: 3mm Cost saving)
+    - Thickness: 3mm
+    - Structure:
+      - middle sunken to fix the battery
+      - both sides partly upward to form the snap with Base
+      - front and back right upper corner open hole, reserved for battery cable
+      - reserved threaded holes, countersunk holes for bolts for connecting
+  - Arm:
+    - Material: PLA
+    - Thickness: 8mm
+    - Structure:
+      - fix the servo and Motor Case
+      - Arm inter-bearing connecting
+      - reserved space for motor cables, encoder cables Space
+      - Distance between control motor radial magnet and encoder (<1mm)
+      - Reserved threaded holes, countersunk holes for bolts for connection
+  - Motor Case:
+    - Material: PLA
+    - Thickness: 3mm
+    - Structure:
+      - Fixed Motor, Magnetic Encoder
+      - Reserved space for bearings
+      - Outer recessed, reserved space for rubber ring
+      - Reserved threaded holes, countersunk holes for bolts for connection
 
-#### ⚙️ 动力系统
-- **无刷直流电机**
-  - 型号：**PM3510**
-  - 参数：1250rpm，0.11N·m，45 rmp/v，驱动芯片为 DRV8301。
-  - Note：
-    - 需更换电机径向磁铁（原有电机径向磁铁磁性较差，导致编码器噪声大）。
-    - 安装更强力编码器磁铁时，需考虑机械设计中磁铁与编码器距离。
-- **舵机**
-  - 型号：**SG995**
-  - 参数：20ms，180°旋转角（500-2500），13kg·cm 扭矩（@6V），100mA。
-  - Note：
-    - 注意安装时的初始角度，避免旋转方向错误。
+#### ⚙️ Power System
 
-#### 🎯 传感器选型
+- **Brushless DC motor**
+  - Model: **PM3510**
+  - Parameters: 1250rpm, 0.11N-m, 45 rmp/v, Driver chip DRV8301.
+  - Note:
+  - Motor radial magnet needs to be replaced (the original motor radial magnet has a poor magnetism, which results in a noisy encoder).
+    - When installing a stronger encoder magnet, the distance between the magnet and the encoder in the mechanical design should be considered.
+- **Servo**
+  - Model: **SG995**
+  - Parameters: 20ms, 180°rotation angle (500-2500), 13kg-cm Torque (@6V), 100mA.
+  - Note:
+    - Pay attention to the initial angle when installing, to avoid the wrong rotation direction.
 
-##### **AS5147P 高速旋转位置传感器**
+#### 🎯 Sensor Selection
 
-- **产品概述**
-  - **AS5147P** 是一款基于 CMOS 技术的 14 位高分辨率轴向磁旋转位置传感器，专为高达 **28,000 RPM** 的高速应用设计，提供完整的 **360° 绝对角度测量**。它集成了先进的 **动态角度误差补偿（DAEC™）** 技术，能够有效抑制由系统延迟引起的角度误差，实现几乎**零延迟输出**。
-  AS5147P 同时具备 **12 位二进制增量输出接口（ABI）**，分辨率高达每转 **4096 步/1024 脉冲**，适配编码器系统。通过标准 **4 线 SPI 接口**，主控设备可读取传感器输出的高精度角度信息，同时支持编程非易失性配置，无需外接编程器。
+##### **AS5147P High-Speed Rotary Position Sensor**
 
-- **主要特性**
+- **Product Overview**
+  - **AS5147P** is a CMOS technology-based 14-bit, high-resolution, axial-magnetic rotary position sensor designed for high-speed applications up to **28,000 RPM**, providing complete ** 360° absolute angle measurement**. It incorporates advanced **Dynamic Angular Error Compensation (DAEC™)** technology, which effectively suppresses angular errors caused by system delays to achieve a virtually **zero delay output**.
+  The AS5147P also features a **12-bit incremental binary output interface (ABI)** with a resolution of up to **4096 steps/1024 pulses per revolution**, which is suitable for encoder systems. Through the standard **4-wire SPI interface**, the master device can read the high-precision angular information output from the sensor, and supports programmable non-volatile configurations without the need for an external programmer.
+
+- **Key features**
 
   <div style="width: auto; display: table; margin: auto;">
 
-  | 特性类别           | 描述                                                         |
+  | Feature Category | Description |
   |--------------------|-------------------------------------------------------------|
-  | **分辨率**          | 14 位绝对角度-SPI<br>12 位增量编码（ABI：1024/2048/4096）    |
-  | **速度支持**        | 高达 **28,000 RPM**，适用于高速旋转检测                      |
-  | **输出接口**        | SPI、ABI、UVW 换向信号、PWM 占空比编码输出           |
-  | **动态角度补偿**    | DAEC™ 动态角度误差补偿（针对 SPI、ABI、UVW 输出，提升实时性）  |
-  | **抗干扰能力**      | 抑制均匀杂散磁场干扰，提升系统稳定性                          |
-  | **非易失性配置**    | SPI 接口可编程，无需专用编程器                                |
-  | **自诊断功能**      | 检测磁场强度异常（过强/过弱/缺失）、设备状态异常等             |
-  | **插值与信号完整性**| 在高速下插补缺失 ABI 脉冲，确保分辨率和信号连续性              |
+  | **Resolution** | 14-bit Absolute Angle-SPI<br>12-bit Incremental Encoding (ABI: 1024/2048/4096) |
+  | **Speed Support** | Up to **28,000 RPM** for high speed rotation detection |
+  | **Output Interfaces** | SPI, ABI, UVW commutation signals, PWM Duty Cycle encoded outputs |
+  | **Dynamic Angle Compensation** | DAEC™ Dynamic Angle Error Compensation (for SPI, ABI, UVW outputs, enhancing real-time) | | **Dynamic Angle Compensation** | DAEC™ Dynamic Angle Error Compensation (for SPI, ABI, UVW outputs, enhancing real-time) |
+  | **Anti-Interference Capability** | Suppresses uniform stray magnetic field interference and improves system stability |
+  | **Non-Volatile Configuration** | SPI interface programmable, no need for dedicated programmer |
+  | **Self-Diagnostic Functions** | Detects magnetic field strength abnormalities (too strong/too weak/absent), device status abnormalities, etc. |
+  | **Interpolation and Signal Integrity** | Interpolates missing ABI pulses at high speeds to ensure resolution and signal continuity. Interpolation and Signal Integrity**| Interpolates missing ABI pulses at high speeds to ensure resolution and signal continuity.
 
   </div>
 
-- **技术原理与结构**
-  - AS5147P 采用 **霍尔效应传感器阵列**，通过感应垂直于芯片表面的磁通密度，将磁场分量转换为电压信号。经过模拟前端（AFE）放大和滤波后，这些信号被送入模数转换器（ADC），再经由 CORDIC 算法处理，精确计算出磁矢量的角度与幅度。此外，AS5147P
-    - **自动增益控制（AGC）** 机制：实时调节前端增益，适应磁场与温度变化
-    - **CORDIC 算法模块**：计算旋转角度与磁场幅值
-    - **插值机制**：在高转速下补全 ABI 缺失脉冲，保障输出信号连续性
-  - AS5147P 具有 **动态角度误差补偿（DAEC™）** 功能，通过对角度测量过程中的时间延迟进行估计，并据此预测并补偿角度输出误差，从而提升 SPI、ABI 和 UVW 输出的实时性。在恒定速度条件下，该补偿效果尤为显著。
+  - **Technical Principles and Architecture** 
+    - The AS5147P utilizes an array of **Hall effect sensors** that convert magnetic field components into voltage signals by sensing the magnetic flux density perpendicular to the chip surface. After amplification and filtering by an analog front end (AFE), these signals are fed into an analog-to-digital converter (ADC) and then processed by the CORDIC algorithm to accurately calculate the angle and amplitude of the magnetic vector. In addition, the AS5147P 
+      - **Automatic Gain Control (AGC)** mechanism: real-time adjustment of the front-end gain to adapt to changes in magnetic field and temperature 
+      - **CORDIC Algorithm Module**: calculates the angle of rotation and the amplitude of the magnetic field 
+      - **Interpolation Mechanism**: completes the missing pulse of the ABI at high speeds to ensure the continuity of the output signals 
+    - The AS5147P has a **Dynamic Angular Error Compensation (DAEC™)** function. The AS5147P features **Dynamic Angle Error Compensation (DAEC™)**, which improves real-time performance of the SPI, ABI, and UVW outputs by estimating the time delay during angle measurements and predicting and compensating for the angular output error accordingly. This compensation is particularly effective at constant speeds.
 
 
-##### **YDLIDAR X3 激光雷达**
+##### **YDLIDAR X3 LIDAR** 
 
-YDLIDAR X3 是一款高性能、紧凑型的二维激光雷达（LiDAR）产品，采用三角测距原理，并结合先进的光学、电学与算法设计，能够实现**360 度全方位的环境扫描与高精度距离测量**。
+The YDLIDAR X3 is a high-performance, compact 2D LiDAR (LiDAR) product that utilizes the principle of triangulation and combines advanced optical, electrical and algorithmic design to enable **360-degree omni-directional environmental scanning and high-precision distance measurement**.
 
-- 🌐 核心功能概述
-  - 🔄 **360° 全方位扫描测距**
-  YDLIDAR X3 搭载旋转电机，能实现**完整的水平面360度旋转**，在每一圈旋转中实时输出对应角度的测距数据，形成高密度的二维点云图。这意味着它能够**全景感知周围环境**，无需移动平台本身即可获取完整的空间信息。
-  - 🎯 **高精度与高频率的测距性能**
-  该雷达通过高频率激光脉冲发射与回波接收机制，达到了每秒高达 **4000次的测距能力**（典型值），确保即使在快速移动的环境中也能获得流畅、细腻的感知效果。
-    - **典型测距精度：±2cm（≤1m）**
-    - **相对误差：最小1%，在远距离下也能控制在3.5%~5%以内**
-  - ☀️ **抗环境光干扰能力强**
-  YDLIDAR X3 拥有良好的抗干扰能力，可在自然光或人工灯光下稳定工作。无论是明亮的日光照射还是室内灯光频闪，它都能维持稳定输出，保证测距数据的可靠性。
-  - 🔋 **低功耗、小体积、长寿命**
-  产品设计注重节能与便携，具备低能耗运行特性，并采用长寿命旋转结构与光电元件，适合长期部署在各种智能设备中。
-  - ⚙️ **电机转速可调，适应不同需求**
-  用户可根据应用需要调整扫描频率，从 **5Hz 到 10Hz** 可选，平衡测量精度与实时性能。例如：
-    - **5Hz 时：角度分辨率可达 0.6°**，适合对精度要求高的场景（如建图）
-    - **10Hz 时：角度分辨率为 1.2°**，更适合对实时性要求更高的任务（如避障）
+- 🌐 Core Functions Overview 
+  - 🔄 **360° Omni-directional Scanning and Distance Measurement** 
+  YDLIDAR X3 is equipped with a rotary motor, which is capable of realizing **complete 360-degree rotations in the horizontal plane**, and real-time outputting the distance measurement data of the corresponding angle in each rotation to form a high-density 2D point cloud map. This means that it is capable of **panoramic perception of its surroundings** and can obtain complete spatial information without moving the platform itself.
+  - 🎯 **High-precision and high-frequency ranging performance** 
+  The radar achieves a ranging capability of up to **4,000 times per second** (typical) through the mechanism of transmitting high-frequency laser pulses and receiving them as echoes, ensuring smooth, detailed perception even in fast-moving environments.
+    - **Typical ranging accuracy: ±2cm (≤1m)** 
+    - **Relative error: minimum 1%, and within 3.5%~5% at long distances** 
+  - ☀️ **Strong resistance to interference from ambient light** 
+  The YDLIDAR X3 possesses good resistance to interference, and can work stably under natural light or artificial light. Whether it is bright daylight exposure or indoor lighting strobe, it can maintain stable output to ensure the reliability of ranging data.
+  - 🔋 **Low power consumption, small size, long life** 
+  The product design focuses on energy saving and portability, with low energy consumption operating characteristics, and adopts a long-life rotating structure and optoelectronic components, which is suitable for long-term deployment in a variety of smart devices.
+  - ⚙️ **Motor speed is adjustable to suit different needs** 
+  Users can adjust the scanning frequency from **5Hz to 10Hz** according to the application needs, balancing the measurement accuracy and real-time performance. For example: 
+    - **5Hz: the angular resolution can be up to 0.6°**, suitable for scenarios requiring high accuracy (e.g. map building) 
+    - **10Hz: the angular resolution is 1.2°**, which is more suitable for tasks requiring higher real-time performance (e.g. obstacle avoidance) 
 
-- ⚙️ 性能参数
+- ⚙️ Performance Parameters
 
   <div style="width: auto; display: table; margin: auto;">
 
-  | 项目             | 最小值 | 典型值 | 最大值 | 单位 | 备注                         |
-  |------------------|--------|--------|--------|------|----------------------------|
-  | 测距频率         | /      | 4000   | /      | Hz   | 每秒最多测距 4000 次         |
-  | 扫描频率         | 5      | 8      | 10     | Hz   | 电机可调                     |
-  | 测距范围         | /      | 0.12/8 | /      | m    | 10%/80%反射                  |
-  | 扫描角度         | /      | 0-360  | /      | °    | 旋转360度                    |
-  | 测距绝对误差     | /      | 2      | /      | cm   | ≤1m 范围内                   |
-  | 相对误差         | /      | 1%     | 5%     | /    | 最大相对误差在8m距离时        |
-  | 角度分辨率       | 0.6    | 0.96   | 1.2    | °    | 分别对应5Hz/8Hz/10Hz         |
-  | 俯仰角           | 0.25   | 1      | 1.75   | °    | 束角控制范围                 |
+  | Item | Minimum | Typical | Maximum | Unit | Remarks | 
+  | ------------------ | -------- | -------- | -------- | ------ | ---------------------------- | 
+  | Ranging Frequency | / / | 4000 | / | Hz | Ranging per second max. 4000 times | 
+  | Scanning Frequency | 5 | 8 | 10 | Hz | Motor Adjustable | 
+  | Ranging Range | / | 0.12/8 | / | m | 10%/80% Reflective | 
+  | Scanning Angle | / | 0-360 | / | ° | Rotation of 360° | 
+  | Absolute Error of Ranging | / | 2 | / | cm | ≤1m range | 
+  | Relative Error | / | 1% | 5% | / | Maximum Relative Error in 8m distance | 
+  | Angle Resolution | 0.6 | 0.96 | 1.2 | ° | corresponds to 5Hz/8Hz/10Hz respectively | 
+  | Pitch | 0.25 | 1 | 1.75 | ° | Bound Angle control range |
 
   </div>
 
 
-##### **CMP10A-IMU 惯性测量单元**
+##### **CMP10A-IMU Inertial Measurement Unit**
 
-CMP10A是基于MEMS技术的高性能三维运动姿态测量系统。它包含三轴陀螺仪、三轴加速度计，三轴电子罗盘运动传感器和气压计。通过集成各种高性能传感器和运用自主研发的姿态动力学核心算法引擎，结合高动态卡尔曼滤波融合算法，为客户提供高精度、高动态、实时补偿的三轴姿态角度，通过对各类数据的灵活选择配置，满足不同的应用场景。
+CMP10A is a high performance 3D motion attitude measurement system based on MEMS technology. It contains three-axis gyroscope, three-axis accelerometer, three-axis electronic compass motion sensor and barometer. Through the integration of various high-performance sensors and the use of self-developed attitude dynamics core algorithm engine, combined with high-dynamic Kalman filter fusion algorithms, to provide customers with high-precision, high-dynamic, real-time compensation of the three-axis attitude angle, through the flexible choice of configuration of various types of data, to meet the different application scenarios.
 
-- **产品特性**
-  - 模块集成高精度的陀螺仪、加速度计、地磁场传感器和气压计，采用高性能的微处理器和先进的动力学解算与卡尔曼动态滤波算法，能够快速求解出模块当前的实时运动姿态。
-  - 采用先进的数字滤波技术，能有效降低测量噪声，提高测量精度。
-  - 模块内部集成了姿态解算器，配合动态卡尔曼滤波算法，能够在动态环境下准确输出模块的当前姿态， 姿态测量精度静态 0.05 度，动态 0.1 度，稳定性极高，性能甚至优于某些专业的倾角仪。
-  - Z轴航向角加入地磁传感器滤波融合，解决了6轴算法中，由于陀螺仪积分的漂移引起的累计误差，可长期稳定输出航向角数据。注意：要由于有磁场检测，使用前需要校准，而且使用时需要远离磁干扰区域、电子设备、磁铁、扬声器等硬磁性物体至少20cm的距离。
-  - 模块内部自带电压稳定电路，工作电压3.3~5V，引脚电平兼容3.3V/5V的嵌入式系统，连接方便。
-  - 支持串口和IIC两种数字接口。方便用户选择最佳的连接方式。串口速率4800bps~921600bps可调，IIC接口支持全速400K速率。
-  - 最高200Hz数据输出速率。输出内容可以自由选择，输出速率0.2～200Hz可调节。
+- **Product Features**
+  - The module integrates high-precision gyroscopes, accelerometers, geomagnetic field sensors and barometers, and adopts a high-performance microprocessor and advanced dynamics solving and Kalman dynamic filtering algorithms, which are able to quickly solve the current real-time motion attitude of the module.
+  - The advanced digital filtering technology can effectively reduce the measurement noise and improve the measurement accuracy.
+  - Module internal integrated attitude solver, with dynamic Kalman filtering algorithm, can accurately output the current attitude of the module in the dynamic environment, attitude measurement accuracy of static 0.05 degrees, dynamic 0.1 degrees, the stability is very high, the performance is even better than some professional inclinometer.
+  - The Z-axis heading angle is fused with geomagnetic sensor filtering, which solves the cumulative error caused by the drift of the gyroscope integral in the 6-axis algorithm, and can output the heading angle data stably for a long time. Note: It needs to be calibrated before use due to magnetic field detection, and it needs to be kept at least 20cm away from magnetic interference areas, electronic devices, magnets, speakers and other hard magnetic objects.
+  - Module comes with internal voltage stabilisation circuit, working voltage 3.3~5V, pin level compatible with 3.3V/5V embedded systems, easy to connect.
+  - Supports both serial and IIC digital interfaces. Convenient for users to choose the best way to connect. Serial rate 4800bps~921600bps adjustable, IIC interface support full speed 400K rate.
+  - Maximum 200Hz data output rate. Output content can be freely selected, output rate 0.2 ~ 200Hz adjustable.
 
-- **传感器参数指标**
+- **Sensor parameter indicators**
 
   <div style="width: auto; display: table; margin: auto;">
 
-  | 传感器类型 | 参数       | 条件               | 典型值                   |
-  |------------|------------|--------------------|--------------------------|
-  | 加速度计   | 量程       |                    | ±16g                     |
-  |           | 分辨率     | ±16g               | 0.0005 (g/LSB)           |
-  |           | RMS噪声    | 带宽=100Hz         | 0.75~1 mg-rms            |
-  |           | 静止零漂   | 水平放置           | ±20~40 mg                |
-  |           | 温漂       | -40°C ~ +85°C      | ±0.15 mg/℃              |
-  |           | 带宽       |                    | 5~256 Hz                 |
-  | 陀螺仪     | 量程       |                    | ±2000 °/s                |
-  |           | 分辨率     | ±2000°/s           | 0.061 (°/s)/LSB          |
-  |           | RMS噪声    | 带宽=100Hz         | 0.028~0.07 (°/s)-rms     |
-  |           | 静止零漂   | 水平放置           | ±0.5~1 °/s               |
-  |           | 温漂       | -40°C ~ +85°C      | ±0.005~0.015 (°/s)/℃    |
-  |           | 带宽       |                    | 5~256 Hz                 |
-  | 磁力计     | 量程       |                    | ±2 Gauss                 |
-  |           | 分辨率     | ±2Gauss            | 0.0667 mGauss/LSB        |
-  | 气压计     | 量程       |                    | 300~1100 hPa             |
-  |           | RMS噪声    | 标准模式           | 0.5 Pa-RMS               |
-  |           | 相对精度   |                    | ±0.06 hPa                |
+  | Sensor Type | Parameters | Conditions | Typical |
+  | ------------ | ------------ | -------------------- | -------------------------- |
+  | Accelerometer | Range | | ±16g |
+  | | Resolution | ±16g | 0.0005 (g/LSB ) |
+  | | RMS Noise | Bandwidth = 100Hz | 0.75~1 mg-rms |
+  | | Stationary Zero Drift | | Horizontal Positioning | ±20~40 mg |
+  | | Temperature Drift | -40°C ~ +85°C | ±0.15 mg/°C |
+  | | Bandwidth | | 5~256 Hz |
+  | Gyro Gauge | Range | | ±2000 °/s |
+  | | Resolution | ±2000 °/s | 0.061 (°/s)/LSB |
+  | | RMS Noise | Bandwidth=100Hz | 0.028~0.07 (°/s)-rms |
+  | | Stationary Zero Drift | Horizontal Placement | ±0.5~1 °/s |
+  | | Temperature Drift | -40°C ~ +85°C | ±0.005~0.015 (°/s)/°C |
+  | | Bandwidth | | 5~256 Hz |
+  | Magnetometer | Range | | ±2 Gauss |
+  | | Resolution | ±2 Gauss | 0.0667 mGauss/LSB |
+  | Barometer | Range | | 300~1100 hPa |
+  | | RMS Noise | Standard Mode | 0.5 Pa-RMS |
+  | | Relative Accuracy | | ±0.06 hPa |
 
   </div>
 
 
-#### **结构连接**
-轴承 轧带 绝缘胶布 电线 导线 螺栓 螺母 橡胶圈（轮胎） 502胶水
+#### **structural connections**
+bearings rolled tape insulating tape wires conductors bolts nuts rubber rings (tyres) 502 glue
 
 ---
 
-### 💻 软件系统设计
+### 💻 Software System Design
 
 <p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document\images\Software.png" width="800"/></p>
 
-#### ⚡ FOC电机控制子系统
+#### ⚡ FOC Motor Control Subsystem
 
-##### RT-Thread 实时操作系统
-实现任务隔离：控制线程、电流采样线程、通信线程独立运行；
+##### RT-Thread RTOS
+Realisation of task isolation: control thread, current sampling thread, communication thread run independently;
 
 ```mermaid
 graph TD
-    A[系统启动] --> B[NVM中加载配置参数]
-    B --> C[系统初始化]
-    C --> C1[初始化外设<br>GPIO/PWM/USB/SPI/DMA...]
-    C --> C2[中断配置<br>优先级设置/注册处理函数/启动中断]
-    C --> C3[RTOS初始化<br>内存/调度器/时钟...]
 
-    C3 --> D[创建主线程]
-    D --> E[启动调度器]
-    E -.-> F[主线程执行]
-    F --> F1[启动外设<br>PWM/ADC/TIM]
-    F1 --> F2[创建辅助线程]
-    F2 --> F2a[通信处理线程]
-    F2 --> F2b[系统监控线程<br>模拟采集/状态监控]
-    F2 --> F2c[电机状态管理线程]
-    F2 --> G[退出并删除主线程]
+    A[System boot] --> B[Load configuration parameters in NVM]
+    B --> C[System initialisation]
+    C --> C1[Initialise peripherals<br>GPIO/PWM/USB/SPI/DMA...]
+    C --> C2[Interrupt Configuration<br>Priority Setting/Register Handler Functions/Initiate Interrupts]
+    C --> C3[RTOS Initialisation<br>Memory/Scheduler/Clock...]
 
-    G --> H[进入实时运行状态]
+    C3 --> D[create main thread]
+    D --> E[start scheduler]
+    E -.-> F[Main thread execution]
+    F --> F1[Start peripherals<br>PWM/ADC/TIM]
+    F1 --> F2[Create auxiliary thread]
+    F2 --> F2a[Communication processing thread]
+    F2 --> F2b[System monitoring thread<br>Analog acquisition/status monitoring]
+    F2 --> F2c[Motor status management thread]
+    F2 --> G[Exit and delete main thread]
 
-    %% 实时线程部分
-    subgraph 实时运行状态
-        H1[通信线程]
-        H1 --> H1a[定期上报状态]
-        H1 --> H1b[USB/CAN中断接收指令]
-        H1 --> H1c[UART轮询接收指令]
-        H1b --> H1d[接收及解析外部控制指令]
+    G --> H[enter real-time running state]
+
+
+
+
+    %% Real-time thread section
+    subgraph Real-time running status
+        H1[Communication thread]
+        H1 --> H1a[Periodic status report]
+        H1 --> H1b[USB/CAN interrupt receive command]
+        H1 --> H1c[UART polling receive command]
+        H1b --> H1d[Receive and parse external control command]
         H1c --> H1d
-        H1d --> H1e[更新控制目标]
-        H1c --> H1f[UART轮询发送数据<br>电机速度/位置]
+        H1d --> H1e[Update control target]
+        H1c --> H1f[UART polling to send data<br>motor speed/position]
 
-        H2[监控线程]
-        H2 --> H2a[采集系统状态<br>温度/电压/错误信号]
-        H2a --> H2b[异常检测]
+        H2[Monitoring thread]
+        H2 --> H2a[Acquire system status<br>temperature/voltage/error signals]
+        H2a --> H2b[Abnormality detection]
 
-        H3[电机状态线程]
-        H3 --> H3a[周期刷新<br>每个轴的状态信息]
-        H3a --> H3b[同步当前控制状态<br>工作模式/反馈变量]
-        H3b --> H3c[转发错误信息]
+        H3[Motor status thread]
+        H3 --> H3a[Periodic refresh<br>status information for each axis]
+        H3a --> H3b[Synchronise current control state<br> operating mode/feedback variables]
+        H3b --> H3c[Forward error messages]
     end
 
-    %% 控制链（由硬件定时器及中断驱动）
-    subgraph 控制链执行-核心定时器中断
-        T1[高精度定时器中断<br>控制周期触发] --> T2[更新系统时隙]
-        T2 --> T3[软件触发控制中断<br>调度控制计算流程]
-        T3 --> T4[触发采样及数据获取<br>电流/编码器/传感器数据]
-        T4 --> T5[执行实时控制算法回路<br>（位置/速度/电流）]
-        T5 --> T6[重置状态 & 检查安全条件]
-        T6 --> T7[执行闭环控制更新<br>状态估计/PID调节/PWM更新]
-        T7 --> T8[验证周期完整性/安全检查]
-        T5 -->|异常检测| D1[中断触发保护<br>停机/错误上报]
-        T8 -->|异常检测| D1
+    %% Control Chain (driven by hardware timers & interrupts)
+    subgraph Control Chain Execution - Core Timer Interrupts
+        T1[High Precision Timer Interrupt<br>Control Cycle Trigger] --> T2[Updates System Time Slot]
+        T2 --> T3[Software Triggered Control Interrupt<br>Scheduling Control Calculation Flow]
+        T3 --> T4[Trigger Sampling & Data Acquisition<br>Current/Encoder /sensor data]
+        T4 --> T5[Execute real-time control algorithm loop<br>position/velocity/current]
+        T5 --> T6[Reset state & check safety conditions]
+        T6 --> T7[Execute closed-loop control update<br>State estimation/PID tuning/PWM update]
+        T7 --> T8[Verify cycle integrity/safety check]
+        T5 -->|Anomaly detection| D1[interrupt trigger protection<br>shutdown/error reporting]
+        T8 -->|anomaly detection| D1
     end
 
-    %% 辅助中断
-    subgraph 辅助中断
-        U1[USB/CAN 通信中断]
-        U1 --> U2[接收指令数据]
-        U2 --> U3[写入数据队列]
+    %% Auxiliary Interrupt
+    subgraph Auxiliary Interrupt
+        U1[USB/CAN communication interrupt]
+        U1 --> U2[Receive command data]
+        U2 --> U3[Write data queue]
 
-        G1[GPIO EXIT中断]
-        G1 --> G2[检测故障信号]
-        G2 --> G3[DRV8301 故障中断...<br>nFAULT 拉低...] --> G3a[断电/上报错误]
-        G2 --> G4[编码器 Z 相位中断<br>] --> G4a[编码器校准] --> T4
+        G1[GPIO EXIT interrupt]
+        G1 --> G2[Detect fault signal]
+        G2 --> G3[DRV8301 Fault interrupt... <br>nFAULT pull down...] --> G3a[power down/up error]
+        G2 --> G4[encoder Z phase interrupt<br>] --> G4a[encoder calibration] --> T4
 
-        E1[辅助TIM中断]
-        E1 --> E2[编码器中断] --> E2a[记录编码器边沿] --> T4
-        E1 --> E3[PWM 捕获中断] --> E3a[读取PWM信号宽度] --> T4
+        E1[auxiliary TIM interrupt]
+        E1 --> E2[encoder interrupt] --> E2a[record encoder edge] --> T4
+        E1 --> E3[PWM capture interrupt] --> E3a[read PWM signal Width] --> T4
     end
 
-    %% 交互链接
+    %% Interlink
     H1e --> T5
-    H2b -->|异常反馈| D1
-    H3c -->|错误反馈| D1
-    G3a -->|DRV8301故障| D1
-    U3 -->|指令队列| H1b
+    H2b -->|Exception Feedback| D1
+    H3c -->|Error Feedback| D1
+    G3a -->|DRV8301 Failure| D1
+    U3 -->|Instruction Queue| H1b
 
-    %% 样式定义
+    %% Style definitions
     classDef init fill:#CDEDF6,stroke:#2B7A78,color:#17252A;
     classDef thread fill:#E6F7D9,stroke:#4CAF50,color:#1B5E20;
     classDef runtime fill:#FFF3CD,stroke:#FFC107,color:#7F4E00;
@@ -553,7 +560,7 @@ graph TD
     classDef interrupt fill:#FFE5B4,stroke:#FF9800,color:#E65100;
     classDef error fill:#FADBD8,stroke:#C0392B,color:#641E16;
 
-    %% 分类标注
+    %% Category labelling
     class A,B,C,C1,C2,C3,D,E init
     class F,F1,F2,F2a,F2b,F2c,G,H,H1,H2,H3,H1a,H1b,H1c,H1d,H1e,H1f,H2a,H2b,H3a,H3b,H3c thread
     class T1,T2,T3,T4,T5,T6,T7,T8 control
@@ -561,78 +568,80 @@ graph TD
     class D1 error
 ```
 
-- 🟦 **初始化阶段**
-  - 从 `系统启动` 开始：
-  - **从NVM加载配置参数**：用于加载之前保存的系统参数，比如电机配置、校准数据等。
-  - **系统初始化**：分为三个关键部分：
-    - `GPIO/PWM/USB/SPI/DMA` 等外设初始化。
-    - 中断配置，包括中断优先级设置、注册ISR。
-    - RTOS（实时操作系统）初始化，启动调度器、内存堆栈等。
-  - 最后，创建主线程并启动调度器。
-- 🟩 **主线程运行逻辑**
-  - **启动外设**：如 PWM 输出、电流采样ADC、定时器等。
-  - **创建三个辅助线程**：
-    - **通信处理线程**：USB/CAN/UART 接收、状态上传。
-    - **系统监控线程**：如温度、电压监控和故障检测。
-    - **电机状态管理线程**：周期更新各个轴的工作状态。
-  - 主线程任务完成后退出，系统进入实时运行状态。
-- 🟨 **实时运行阶段**
-  - **通信线程（H1）**
-    - 处理 USB/CAN/UART 指令。
-    - 上报状态数据。
-    - 解析控制指令，更新控制目标，进入控制链（与控制核心关联）。
-  - **系统监控线程（H2）**
-    - 定期采集温度、电压、错误标志等。
-    - 进行异常检测，发现问题后向 `错误处理D1` 汇报。
-  - **电机状态管理线程（H3）**
-    - 周期刷新电机状态，反馈给控制系统。
-    - 传递工作模式变化、错误信息等。
-- 🟪 **核心控制链**：这是控制系统的“心脏”部分,由定时器中断驱动：
-  - 高精度定时器中断触发 → 控制周期开始。
-  - 启动软中断执行控制逻辑：
-    1. **采样数据**：读取编码器、电流传感器等。
-    2. **执行控制算法**：包括位置、速度、电流的闭环控制。
-    3. **更新PWM**：输出到电机驱动。
-    4. **周期安全检查与状态复位**。
-  - 若检测到异常，会立刻进入 `错误中断处理`，停机/保护。
-- 🟧 **辅助中断模块**：补充控制逻辑的中断事件：
-  - **通信中断**
-    - 接收USB/CAN外部控制数据，将其写入指令队列，后由通信线程解析执行。
-    - UART DMA 中断
-  - **GPIO 中断**
-    - 检测如 `DRV8301 nFAULT` 故障信号。
-    - 编码器的 Z 相中断，用于一次性校准（如原点对齐）。
-  - **定时器中断**
-    - 编码器边沿捕捉、PWM宽度捕捉，用于转速和位置测量。
+- 🟦 **Initialisation phase**
+  - Starting from `System Startup`:
+  - **Load Configuration Parameters from NVM**: Used to load previously saved system parameters such as motor configurations, calibration data etc.
+  - **System initialisation**: divided into three key sections:
+    - `GPIO/PWM/USB/SPI/DMA` and other peripherals initialisation.
+    - Interrupt configuration, including interrupt priority setting, registering ISR.
+    - RTOS (Real-Time Operating System) initialisation, starting the scheduler, memory stacks, etc.
+  - Finally, creating the main thread and starting the scheduler.
+- 🟩 **Main thread running logic**
+  - **Starting peripherals**: e.g. PWM outputs, current sampling ADCs, timers, etc.
+  - **Create three auxiliary threads**:
+    - **Communication processing threads**: USB/CAN/UART receive, status upload.
+    - **System monitoring threads**: such as temperature, voltage monitoring and fault detection.
+    - **Motor status management thread**: periodic update of the operating status of each axis.
+  - The main thread exits when the task is completed and the system enters the real-time operation state.
+- 🟨 **Real-time operation phase**
+  - **Communication thread (H1)**
+    - Handles USB/CAN/UART commands.
+    - Report status data.
+    - Parses control commands, updates control targets, and enters the control chain (associated with the control core).
+  - **System Monitoring Thread (H2)**
+    - Periodically collects temperature, voltage, error flags, etc. Performs anomaly detection.
+    - Performs anomaly detection and reports to `Error Handling D1` when problems are found.
+  - **Motor Status Management Thread (H3)**
+    - Periodically refreshes motor status and feeds back to the control system.
+    - Transmits operating mode changes, error messages, etc.
+- 🟪 **Core Control Chain**: This is the ‘heart’ of the control system, driven by the timer interrupt:
+  - High-precision timer interrupt triggered → control cycle starts.
+  - Start the soft interrupt to execute the control logic:
+    1. **Sampling data**: Read encoder, current sensor, etc. 2.
+    2. **Execute control algorithm**: including closed-loop control of position, speed, current.
+    3. **Update PWM**: output to motor drive.
+    4. **Cycle safety check and status reset**.
+  - If an abnormality is detected, it will immediately enter `Error Interrupt Processing` and shutdown/protection.
+- 🟧 **Auxiliary Interrupt Module**: interrupt events that supplement the control logic:
+  - **Communication Interrupts**
+    - Receives USB/CAN external control data, writes it to the command queue, and later parses and executes it by the communication thread.
+    - UART DMA interrupt
+  - **GPIO interrupt**
+    - Detects e.g. `DRV8301 nFAULT` fault signal.
+    - Z-phase encoder interrupt for one-time calibration (e.g., home alignment).
+  - **Timer interrupt**
+    - Encoder edge capture, PWM width capture for RPM and position measurement.
 
 - Note:
-  - 注意为什么线程执行控制，而使用定时器中断？
+  - Note why the thread performs the control and uses a timer interrupt?
 
 
-##### PID调节流程-FOC算法
+##### PID Regulation Flow - FOC Algorithm
 
-控制算法采用三级闭环架构，由上至下依次是位置控制、速度控制及电流控制。控制线程在每个控制周期内依次接收新的输入指令、读取编码器与电流传感器反馈、执行各级 PID 算法并更新控制输出。整个处理过程同时嵌入了防积分饱和、限幅、增益调度以及抗齿槽校准等措施，以保证高精度与鲁棒性。
+The control algorithm uses a three-level closed-loop architecture with position control, speed control and current control in order from top to bottom. The control thread receives new input commands, reads the encoder and current sensor feedback, executes each level of the PID algorithm, and updates the control output in each control cycle. The entire process is embedded with measures such as anti-integral saturation, limiting, gain scheduling, and anti-groove calibration to ensure high accuracy and robustness.
 
-- **控制链整体流程**
+- **Overall flow of the control chain**
   ```mermaid
   graph LR
-      A[上位机传入目标指令<br>位置/速度/电流] --> B[输入处理 & 轨迹规划<br>多模式滤波/Trap Traj / Mirror等]
-      B --> C[位置环：比较目标位置与当前编码器或估算值，计算位置误差]
-      C --> D[基于 P 控制（及抗齿槽补偿等）生成额外的速度期望]
-      D --> E[速度环：将位置环输出的期望速度与实际速度比较<br>以 PI 结构计算扭矩或电流期望]
-      E --> F[转换：扭矩期望经电机参数与扭矩常数转换为电流期望<br>ACIM 型电机需要按磁通进行缩放]
-      F --> G[电流环（FOC）：进入 d-q 坐标系，使用 PI 算法控制电流误差]
-      G --> H[计算出电压命令，经 SVPWM 模块变换生成 PWM 波形]
+    A[Incoming target command from host computer<br>Position/Speed/Current] --> B[Input processing & trajectory planning<br>Multi-mode filtering/Trap Traj / Mirror etc.]
+    B --> C[Position Loop: compares the target position with the current encoder or estimate and calculates the positional error]
+    C --> D[Generate additional speed expectations based on P-control and anti-alveolar compensation etc.]
+    D --> E[Speed loop: compare desired speed from position loop with actual speed to calculate torque or current expectations using PI structure]
+    E --> F[Conversion: torque expectation is calculated from motor output via PI structure speed expectation]
+    D --> E[Velocity loop: compare desired speed from position loop output with actual speed<br>Calculate torque or current expectation using PI structure]
+    E --> F[Conversion: torque expectation is converted to current expectation by motor parameters and torque constants<br>ACIM-type motors need to be scaled by flux]
+    F --> G[Current Loop: access to the d-q coordinate system, control current error using the PI algorithm PI algorithm to control current error]
+    G --> H[Voltage command calculated and converted by SVPWM module to generate PWM waveform]
   ```
 
-  其中：
-  - **输入处理** 根据不同的输入模式（Passthrough、速度/扭矩斜坡、轨迹规划等）更新内部 setpoint，并对环路带宽、限幅等进行滤波。
-  - **位置环** 在位置控制模式下，仅采用比例反馈（pos_gain），并配合环路漂移校正、齿槽补偿等措施。
-  - **速度环** 除了乘以速度增益（vel_gain）得到一个初步扭矩命令外，还引入积分项（vel_integrator_torque_）进行误差累积，并采用防风控制（增益调度及抗饱和措施）。
-  - **电流环** 则在 Field Oriented Control 模块内对 d-q 电流误差进行 PI 调控，积分状态受限于调制矢量饱和条件，并结合前馈项（如反电动势、R/L 前馈）保证系统响应。
+  Of these:
+  - **Input Processing** Updates the internal setpoint according to the different input modes (Passthrough, speed/torque ramping, trajectory planning, etc.) and filters the loop bandwidth, limits, etc.
+  - **Position loop** In position control mode, only proportional feedback (pos_gain) is used in conjunction with loop drift correction, notch compensation, etc.
+  - **Velocity loop** In addition to multiplying the velocity gain (vel_gain) to obtain a preliminary torque command, an integral term (vel_integrator_torque_) is introduced for error accumulation, and windproof control (gain scheduling and anti-saturation measures) is used.
+  - The **current loop**, on the other hand, performs PI modulation of the d-q current error within the Field Oriented Control module, with the integral state limited by the saturation condition of the modulation vectors and combined with feed-forward terms (e.g., reverse potential, R/L feed-forward) to guarantee the system response.
 
-- **控制链运行示意**
-  控制线程与外设、ADC/FOC 中断之间的交互可以概述为：
+- **Schematic of control chain operation**
+  The interaction between the control thread and the peripherals and ADC/FOC interrupts can be summarised as:
 
   ```mermaid
   graph TD
@@ -666,19 +675,19 @@ graph TD
       classDef external fill:#fff3cd,stroke:#ffc107,stroke-width:2px;
   ```
 
-  在此过程中：
-  - **输入处理**：不仅包括直接的 setpoint 传递，还包含滤波、斜坡更新、Trap Traj 插值、镜像模式等多种逻辑。
-  - **各环节反馈**：位置与速度误差分别影响低频与中频控制，而电流环运行在较高频率下，确保整个闭环响应及时。
-  - **错误保护与监控**：在控制线程内部不断检测传感器有效性、限幅状态及功率不匹配情况，一旦异常会触发保护（如停机或错误上报）。
+  In this process:
+  - **Input Processing**: not only includes direct setpoint transmission, but also includes various logics such as filtering, slope updating, Trap Traj interpolation, mirror mode, etc.
+  - **Feedback from each link**: Position and speed errors affect low and medium frequency control respectively, while the current loop operates at higher frequencies to ensure timely response of the entire closed loop.
+  - **Error protection and monitoring**: Sensor validity, limit status and power mismatch are constantly detected inside the control thread, and protection is triggered in case of abnormality (e.g. shutdown or error reporting).
 
-- **位置环** PID（慢速闭环）
-  - **输入**：目标位置（pos_setpoint）与实际位置（编码器 / PLL 或 sensorless 估算）。
-  - **输出**：生成目标速度（vel_setpoint）的修正值。
-  位置环常采用纯比例控制（P 控制），同时应对循环型 setpoints 做周期处理。部分模式下，还会将抗齿槽校准数据叠加到误差修正中。
+- **Position loop** PID (slow closed loop)
+  - **Inputs**: target position (pos_setpoint) vs. actual position (encoder / PLL or sensorless estimation).
+  - **Outputs**: generation of a correction value for the target velocity (vel_setpoint).
+  The position loop is often purely proportional (P-control), and should cycle the cyclic setpoints. In some modes, anti-groove calibration data is also superimposed on the error correction.
 
   ```cpp
-  // 注意：实际代码中会区分线性与循环型 setpoints，
-  // 同时引入防止漂移和增益调度（在误差较小时降低反馈增益）。
+  // Note: the actual code distinguishes between linear and cyclic setpoints,
+  // and introduces both drift prevention and gain scheduling (which reduces the feedback gain when the error is small).
   float pos_error = pos_setpoint - pos_estimate;
   if(config_.circular_setpoints) {
       pos_error = wrap_pm(pos_error, pos_wrap_value);
@@ -686,301 +695,305 @@ graph TD
   vel_setpoint = vel_setpoint_base + config_.pos_gain * pos_error;
   ```
 
-- **速度环** PID（中速闭环）
-  - **输入**：位置环生成的期望速度（含位置 P 补偿）、实际速度（来自编码器 / PLL 输出）。
-  - **输出**：计算得到一个扭矩期望，该值经转换后代表电流（iq_setpoint）。
-    实现采用 PI 控制结构，其中积分项经过防饱和（如限幅或衰减）处理。示例代码概念如下：
+- **Speed loop** PID (medium speed closed loop)
+  - **Inputs**: desired speed generated by the position loop (with position P compensation), actual speed (from encoder / PLL output).
+  - **Output**: calculation to obtain a torque expectation, which is converted to represent the current (iq_setpoint).
+    The implementation uses a PI control structure, where the integral term is protected against saturation (e.g. limiting or attenuation). The sample code concept is shown below:
 
   ```cpp
   float vel_error = vel_desired - vel_estimate;
   vel_integrator_torque_ += (vel_integrator_gain * vel_error * dt);
   vel_integrator_torque_ = std::clamp(vel_integrator_torque_, -config_.  vel_integrator_limit, config_.vel_integrator_limit);
-  // 这里还可能结合增益调度：在小误差时降低 P 作用    （gain_scheduling_multiplier）
+  // Here it is also possible to combine gain scheduling: lowering the P-action at small errors (gain_scheduling_multiplier)
   float torque = torque_setpoint + (vel_gain * gain_scheduling_multiplier * vel_error) + vel_integrator_torque_;
   ```
 
-  其中：
-  - **输入模式**：不同模式（如 VEL_RAMP、TRAP_TRAJ、MIRROR、TUNING 等）决定了如何更新 pos_setpoint/vel_setpoint/torque_setpoint；
-  - **限幅机制**：通过限制 torque 和 vel_setpoint 保证系统输出不超出安全范围；
-  - **错误检测**：例如当检测到超速（overspeed error）或 spinout（机电功率不匹配）时，立即触发错误状态。
+  Among them:
+  - **Input modes**: different modes (e.g. VEL_RAMP, TRAP_TRAJ, MIRROR, TUNING, etc.) determine how the pos_setpoint/vel_setpoint/torque_setpoint is updated;
+  - **Limiting mechanism**: ensures that the system output does not exceed the safe range by limiting the torque and vel_ setpoint to ensure that the system output does not exceed the safe range;
+  - **Error detection**: triggers an error condition immediately when, for example, overspeed error or spinout (electromechanical power mismatch) is detected.
 
-- **电流环** PID（FOC 控制，高速闭环）
-  - **输入**：目标电流（iq_setpoint 与（可选）id_setpoint）与测量电流（ADC 采样并经过 Clarke / Park 变换得到的 Iq、Id）。
-  - **输出**：经过 PI 控制（包括前馈项）计算出 d-q 坐标系下的电压命令，再经逆 Park 变换和 SVPWM 算法转换为 PWM 波形。示例代码概念如下：
+- **Current loop** PID (FOC control, high speed closed loop)
+  - **Inputs**: target current (iq_setpoint and (optionally) id_setpoint) and measured current (Iq, Id sampled by ADC and transformed by Clarke / Park).
+  - **Output**: Voltage command in d-q coordinate system calculated by PI control (including feed-forward term), then converted to PWM waveform by inverse Park transform and SVPWM algorithm. The sample code concept is as follows:
 
   ```cpp
-  // 以 Iq 分量为例（Id 一般保持或跟踪一个预定的值，取决于算法与电机类型）
+  // Take the Iq component as an example (Id generally holds or tracks a predetermined value, depending on the algorithm and motor type)
   float Ierr_q = iq_setpoint - iq_measured;
   v_current_control_integral_q_ += Ierr_q * (i_gain * dt);
 
-  // 如果检测到过调制（输出矢量幅值超出限制），则对积分项做衰减处理（防积分风暴）
-  float mod_scalefactor = /* 根据当前输出模量计算的缩放因子 */;
+  // If overmodulation is detected (output vector amplitude exceeds limits), the integration term is attenuated (protection against integration storms)
+  float mod_scalefactor = /* Scaling factor calculated from current output modulus */;
   if (mod_scalefactor < 1.0f) {
-      // 锁死或衰减积分
+      // Lockout or decay points
       v_current_control_integral_q_ *= 0.99f;
   }
   vq = Vq_feedforward + (p_gain * Ierr_q + v_current_control_integral_q_);
   ```
 
-  再经过类似下面的逆 Park 变换和 SVPWM 算法：
+  This is followed by an inverse Park transform and SVPWM algorithm similar to the one below:
 
   ```cpp
-  // 将 d-q 坐标的 mod_d, mod_q 转换至 α-β 坐标
+  // Convert mod_d, mod_q in d-q coordinates to α-β coordinates.
   float c_p = cos(pwm_phase);
   float s_p = sin(pwm_phase);
   float mod_alpha = c_p * mod_d - s_p * mod_q;
   float mod_beta = c_p * mod_q + s_p * mod_d;
 
-  // SVM 模块将 (mod_alpha, mod_beta) 映射为 PWM 定时（tA, tB, tC）
+  // SVM module maps (mod_alpha, mod_beta) to PWM timings (tA, tB, tC)
   auto [tA, tB, tC, success] = SVM(mod_alpha, mod_beta);
   ```
 
-  - 注意：实际控制中当前控制状态会用于前馈和负载预测，同时考虑 R/L 及反电动势的前馈补偿，这部分代码在 Motor::update() 和 FieldOrientedController::get_alpha_beta_output() 中均有所体现。
+  - Note: The current control state is used for feedforward and load prediction in the actual control, taking into account R/L and feedforward compensation of the reverse electromotive force, which is reflected in the code in Motor::update() and FieldOrientedController::get_alpha_beta_output().
 
-  > **补充说明**：
-  > - 所有各环节的 PID 参数（例如 pos_gain、vel_gain、vel_integrator_gain、当前环 p_gain、i_gain 等）均在系统初始化时从 NVM 加载，参数的调节直接影响闭环动态与稳定性。
-  > - 另外，各输入模式（例如轨迹规划模式 TRAP_TRAJ）和抗齿槽校准（anticogging）措施，也会在 PID 控制链之前完成 setpoint 的预处理，从而保证控制指令平滑、鲁棒。
-
-
-##### 驱动程序开发
-- **编码器（ASA5147P）**：支持多种类型，包括： SPI, ABI, UVW, PWM；该电机驱动器支持两种模式：
-  - ABZ模式：使用stm32F4定时器外设的encoder模式，读取电机编码器的位置和速度反馈
-  - SPI模式：直接读取ASA5147P的寄存器，精度较高14位
-- **FLASH（W25Q32JVSSIQ）**：用于存储参数、配置等；
-- **电机驱动（DRV8301）**
-  - SPI初始化、配置芯片
-  - 使用stm32F4高级定时器TIM1 TIM8：用于三相电机驱动，减少电磁干扰；互补PWM输出，带死区时间配置（在向下计数时强制PWM为50%），防止上下桥臂直通短路
-- **舵机驱动（SG995）**：TIM2的PWM模式，控制舵机的角度。
+  > **Additional Notes**:
+  > - All the PID parameters for each link (e.g. pos_gain, vel_gain, vel_integrator_gain, current loop p_gain, i_gain, etc.) are loaded from the NVM during system initialisation, and parameter tuning directly affects closed-loop dynamics and stability.
+  > - In addition, the input modes (e.g. TRAP_TRAJ for trajectory planning mode) and anticogging measures are also preprocessed at the setpoint before the PID control chain, thus ensuring smooth and robust control instructions.
 
 
-##### 通信协议
-- **USB CDC/HID** **CAN 总线**
-  - fibre 协议栈：一套上位机与下位机通信用的应用层协议。根据ymal文件内容生成相应的通信协议栈。
-  - 数据类型：数据包的格式 流的格式
-- **UART 串口**：与外部传感器或树莓派通信。
-  - 串口通信协议：UART 921600 8N1，ASCII格式；以100Hz频率持续发送电机位置和速度信息。
+##### Driver Development
+- **Encoder (ASA5147P)**: supports multiple types including: SPI, ABI, UVW, PWM; this motor driver supports two modes:
+  - ABZ mode: uses the encoder mode of the stm32F4 timer peripheral, reads the position and speed feedback from the motor encoder
+  - SPI mode: directly reads the ASA5147P's registers with higher 14-bit precision
+- **FLASH (W25Q32JVSSIQ)**: for storing parameters, configurations, etc.;
+- **Motor Driver (DRV8301)**
+  - SPI Initialisation, Configuration Chip
+  - Using stm32F4 advanced timer TIM1 TIM8: for 3-phase motor drive, reducing EMI; Complementary PWM output with dead time configuration (force PWM to be 50% during count down) to prevent short-circuiting of the upper and lower bridge arms straight through
+- **Servo Driver (SG995)**: PWM mode of TIM2 to control the servo's angle.
 
-##### 配置工具 UI
-- **参数配置工具**
-  - 基于QT的可视化界面；
-  - 可视化调参：电机极对数、编码器CPR、刹车电阻设置……；
-  - 一键校准：测量电机的电气特性（即电机相电阻和相电感），以及编码器偏移校准；
-  - 实时监控：电压、电流、温度反馈。
-  - **注意**：本项目中使用的是平台无刷电机，
-- **PID配置工具**：进一步释放FOC驱动板性能。通过调整PID参数，控制器可以快速响应系统中的干扰或变化（例如施加的外力或设定值的变化）而不会变得不稳定，可确保电机驱动板能够以最有效的方式控制电动机。
-  - 基于QT的可视化界面；
-  - 实时监控：位置、转速反馈；
-  - 滑动条：可视化调节PID参数；
-  - **经验**：先把速度环Ki设置为0，把位置环的Kp设置成一个比较小的值。逐渐增大速度环的Kp，每次迭代增加约30％，直到电机出现震动。实际随着Kp的增大，电流声越来越大，最后会高频震动。退回速度环的Kp至振动值的50％，然后设置积分器为0.5 * bandwidth * vel_gain，其中bandwidth是系统的总跟踪带宽。本项目中，bandwidth为10hz。按照公式设置速度环的Ki = 0.5 * 10 * vel_gain。随后，逐步调大位置环Kp，直到看到一些过冲。退缩位置环Kp直到不再有超调为止。调试中可以给一个Kp，再给一个位置目标，看阶跃响应。
-  - **注意**：测试发现电流声的大小和位置环的Kp无关，和速度环的Kp有关，把速度环Kp减小，电流声就会小很多。按理说应该位置环的Kp越大越有超调，可实际发现Kp比较小的时候，电机很软，此时反而有超调。感觉是因为此时电机太软了，到了目标位置有点控制不住。
+
+##### Communication protocols
+- **USB CDC/HID** **CAN bus**
+  - fibre stack: a set of application layer protocols used for communication between the upper and lower units. The corresponding communication protocol stack is generated according to the contents of the ymal file.
+  - Data type: format of packet Format of stream
+- **UART Serial port**: to communicate with external sensors or Raspberry Pi.
+  - Serial communication protocol: UART 921600 8N1, ASCII format; sends motor position and speed information continuously at 100Hz.
+
+##### Configuration Tool UI
+- **Parameter Configuration Tool**
+  - QT-based visualisation interface;
+  - Visual parameter tuning: motor pole-pair number, encoder CPR, brake resistance settings ......;
+  - One-click calibration: measurement of the motor's electrical characteristics (i.e., motor phase resistance and phase inductance), as well as encoder offset calibration;
+  - Real-time monitoring : Voltage, current, temperature feedback.
+  - **Note**: The platform brushless motor used in this project is
+- **PID Configuration Tool**: further unleash the performance of the FOC driver board. By adjusting the PID parameters, the controller can quickly respond to disturbances or changes in the system (e.g., applied external forces or changes in setpoints) without becoming unstable, which ensures that the motor driver board is able to control the motor in the most efficient way.
+  - QT-based visualisation interface;
+  - Real-time monitoring: position and speed feedback;
+  - Sliders: visual adjustment of the PID parameters;
+  - **Experience**: first set the Ki of the speed loop to 0 and the Kp of the position loop to a relatively small value. Gradually increase the Kp of the velocity loop by about 30% per iteration until the motor vibrates. In reality, as Kp increases, the current sound gets louder and louder and eventually vibrates at high frequency. Back off the Kp of the velocity loop to 50% of the vibration value and then set the integrator to 0.5 * bandwidth * vel_gain, where bandwidth is the total tracking bandwidth of the system. For this project, bandwidth was 10 hz. set the Ki of the velocity loop = 0.5 * 10 * vel_gain according to the formula. subsequently, gradually turn up the position loop Kp until some overshoot is seen. Back off the position loop Kp until there is no more overshoot. Debugging can be done by giving a Kp and then a position target to see the step response.
+  - **Note**: Tests have found that the magnitude of the current sound has nothing to do with the Kp of the position loop, and everything to do with the Kp of the velocity loop; reduce the velocity loop Kp, and the current sound will be much smaller. It is reasonable to say that the larger the Kp of the position loop, the more overshoot, but actually found that the Kp is relatively small, the motor is very soft, at this time instead of overshoot. I feel that because the motor is too soft at this time, to the target position is a little out of control.
 
 ---
 
-#### 🤖 ROS系统集成
+#### 🤖 ROS System Integration
 
-##### 🧪 仿真平台构建
-先搭建SLAM仿真平台，便于快速进行算法验证、参数调试。实物电池容量有限，且容易损伤影响项目进度。
+##### 🧪 Simulation Platform Construction
+The SLAM simulation platform is built first, which facilitates rapid algorithm verification and parameter debugging. The capacity of the physical battery is limited, and it is easy to damage to affect the project progress.
 
-- **URDF**：机器人模型结构建模；
-  - **sw_urdf_exporter工具**：https://github.com/ros-industrial/sw_urdf_exporter
-    - 对solidworks建模进行坐标化参数化，使用工具sw_urdf_exporter将结果转换为URDF格式；
-    - 难以对轮足机器人进行直接仿真，这里则简单将轮足机器人转化为两轮差速模型进行试验；
-    - 工具将自动根据模型材料计算质量和惯性矩，并生成相应的STL文件。
-  - **Wheel_Robot**：基础底座（base_link）、激光雷达（laser_link）、IMU（imu_link）、左右驱动轮（left_wheel_link、right_wheel_link）
-    - base：固定IMU、激光雷达、8个Arm（简化模型：将arm直接固定在底座上，无法上下移动）
-      - 质量：0.459 kg，是机器人的主体部分。
-      - 惯性原点：位于 (-0.00238, 0, 0.0969)，可能因设计重心偏移。
-      - 几何与碰撞：均使用 base_link.STL 文件定义。
-    - laser：
-      - 质量：0.0866 kg，轻量化设计。
-      - 安装位置：通过 laser_joint 固定在 base_link 的 (-0.0005, 0, 0.1246) 处。
-      - 功能：激光雷达传感器，位于机器人顶部。
-    - imu：
-      - 质量：0.00216 kg，极轻。
-      - 安装位置：通过 imu_joint 固定在 base_link 的 (-0.01, 0, 0.0946) 处。
-      - 功能：惯性测量单元，靠近底座中心，用于姿态检测。
-    - wheel：
-      - 质量：约 0.01686 kg，对称设计。
-      - 几何与碰撞：均使用 left_wheel_link.STL 和 right_wheel_link.STL。
-      - 安装位置：
-        - 左轮：(0, 0.0655, 0.02596)，绕 y 轴旋转（axis="0 1 0"）。
-        - 右轮：(0, -0.0655, 0.02596)，绕 y 轴负方向旋转（axis="0 -1 0"）。
-        - 轮间距：0.174 m（对称分布于 base_link 两侧）。
+- **URDF**: robot model structural modeling;
+  - **sw_urdf_exporter tool**: https://github.com/ros-industrial/sw_urdf_exporter
+    - coordinate parameterization of solidworks modeling, use the tool sw_urdf_ exporter to convert the results to URDF format;
+    - difficult to simulate a wheel-footed robot directly, here it is simply converted into a two-wheeled differential model for testing;
+    - the tool will automatically calculate the mass and moment of inertia based on the model material and generate the corresponding STL file.
+  - **Wheel_Robot**: base_link, laser_link, imu_link, left_wheel_link, right_wheel_link
+    - base: fixed imu, laser_link, 8 arm (simplified model) : fix the arm directly on the base, can't move up and down
+      - Mass: 0.459 kg, the main part of the robot.
+      - Inertial origin: at (-0.00238, 0, 0.0969), probably due to design center of gravity shift.
+      - Geometry and collisions: both defined using the base_link.STL file.
+    - laser:
+      - mass: 0.0866 kg, lightweight design.
+      - Mounting position: fixed to base_link at (-0.0005, 0, 0.1246) by laser_joint.
+      - Function: LIDAR sensor on top of the robot.
+    - imu:
+      - mass: 0.00216 kg, very light.
+      - Mounting position: Fixed to base_link at (-0.01, 0, 0.0946) by imu_joint.
+      - Function: Inertial measurement unit, near the center of the base, for attitude detection.
+    - wheel:
+      - Mass: about 0.01686 kg, symmetric design.
+      - Geometry and collision: both use left_wheel_link.STL and right_wheel_link.STL.
+      - Mounting position:
+        - Left wheel: (0, 0.0655, 0.02596), rotating around y-axis (axis="0 1 0").
+        - Right wheel: (0, -0.0655, 0.02596), rotating around the y-axis in the negative direction (axis=“0 -1 0”).
+        - Wheel spacing: 0.174 m (symmetrically distributed on both sides of base_link).
+
 
 <p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:35px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/robot_description.png" width="800"/></p>
 
-- **Gazebo**：实现完整仿真环境；
-  - **gazebo插件**：在生成的urdf插件中添加插件，才能生成仿真环境允许所需要的传感器数据；
-    - **1. 差分驱动插件（`diff_drive`）**：实现差分驱动控制与里程计发布。
-      - **轮距（`wheel_separation`）**：`0.174 m`
-      - **轮径（`wheel_diameter`）**：`0.026 m`
-      - **最大扭矩与加速度**：`20 N·m` 和 `1.0 rad/s²`，适用于小型机器人，但需根据实际电机性能调整。
-      - **TF 发布**：`publish_odom_tf` 设为 `true`，确保 `odom` → `base_link` 的坐标变换正常。
-    - **2. 关节状态发布插件（`joint_state`）**：发布左右轮关节状态到 `/joint_states`。
-      - **更新频率**：`30 Hz`，与差分驱动插件一致，合理。
-      - **关节名称**：正确关联 `left_wheel_joint` 和 `right_wheel_joint`，与URDF匹配。
-      - **TF 发布**：robot_state_publisher节点运行时发布 `base_link` → `left_wheel_link` 和 `base_link` → `right_wheel_link` 的坐标变换。
-    - **3. IMU传感器插件**：配置IMU传感器，并发布IMU数据。
-      - **噪声模型**：角速度和线加速度均添加高斯噪声，符合真实IMU特性。
-        - **角速度噪声**：标准差 `2e-4 rad/s`，轻微抖动，合理。
-        - **线加速度噪声**：标准差 `0.017 m/s²`，偏差均值 `0.1 m/s²`，模拟零偏漂移，符合低成本IMU特性。
-      - **更新频率**：`100 Hz`，满足多数SLAM算法需求。
-      - **TF 发布**：robot_state_publisher节点运行时发布 `base_link` → `imu_link` 的坐标变换。
-    - **4. 激光雷达（LiDAR）插件**：配置激光雷达，并发布激光雷达数据。
-      - **扫描参数**：360°扫描，分辨率 `1°`，最大范围 `3.5 m`，最小 `0.12 m`，适用于室内环境。
-      - **噪声**：高斯噪声（`stddev=0.01 m`），模拟测量误差，合理。
-      - **发布频率**：`5 Hz`，较低，可能影响实时避障，建议提升至 `10-20 Hz`。
-      - **安装位置**：`<pose>0 0 0.075 0 0 0</pose>`，相对 `laser_link` 的偏移需与URDF中激光雷达实际高度（`z=0.1246 m`）叠加，确保最终位置正确。
-      - **TF 发布**：robot_state_publisher节点运行时发布 `base_link` → `laser_link` 的坐标变换。
-  - **仿真场景**：
-    - 场景1：[willowgarage](Software\ROS\wheel_robot_sim\src\wheel_robot\worlds\willowgarage.png)
-      - Willow Garage 办公环境是一个经典的仿真场景，用于测试机器人导航、SLAM 和人机交互算法。
-    - 场景2：[cafe](Software\ROS\wheel_robot_sim\src\wheel_robot\worlds\cafe.png)
-      - Cafe World 是一个模拟咖啡馆场景的环境，设计用于测试机器人在动态环境下的导航、SLAM 和人机交互算法。
-    - 两者对比
+- **Gazebo**: to realize the full simulation environment;
+  - **gazebo plugin**: to add the plugin to the generated urdf plugin in order to generate the sensor data that the simulation environment allows to be needed;
+  - **1. Differential Drive Plugin (`diff_drive`)**: to realize the differential drive control with the odometer release.
+    - **Wheel_separation**: `0.174 m`
+    - **Wheel_diameter**: `0.026 m`
+    - **Maximum Torque & Acceleration**: `20 N-m` and `1.0 rad/s²` for small robots but need to be adjusted according to actual motor performance.
+    - **TF Publishing**: `publish_odom_tf` is set to `true` to make sure the `odom` → `base_link` coordinate transformation is working.
+  - **2. Joint state publishing plugin (`joint_state`)**: publish left and right wheel joint states to `/joint_states`.
+    - **Update frequency**: `30 Hz`, consistent with the differential drive plugin, reasonable.
+    - **Joint names**: correctly associate `left_wheel_joint` and `right_wheel_joint`, matches URDF.
+    - **TF Publishing**: robot_state_publisher node runtime publishes coordinate transformations for `base_link` → `left_wheel_link` and `base_link` → `right_wheel_link`.
+  - **3. IMU Sensor Plugin**: configures IMU sensors and publishes IMU data.
+    - **Noise model**: add Gaussian noise for both angular velocity and linear acceleration to match the real IMU characteristics.
+      - **Angular velocity noise**: standard deviation `2e-4 rad/s`, slight jitter, reasonable.
+      - **Linear acceleration noise**: standard deviation `0.017 m/s²`, deviation mean `0.1 m/s²`, simulated zero-bias drift, consistent with low-cost IMU characteristics.
+    - **Update frequency**: `100 Hz`, meets most SLAM algorithm requirements.
+    - **TF Publishing**: robot_state_publisher node runtime publishes `base_link` → `imu_link` coordinate transformations.
+  - **4. laser radar (LiDAR) plugin**: configure LiDAR and publish LiDAR data.
+    - **Scanning parameters**: 360° scanning, `1°` resolution, `3.5 m` maximum range, `0.12 m` minimum, for indoor environments.
+    - **Noise**: Gaussian noise (`stddev=0.01 m`), analog measurement error, reasonable.
+    - **Publishing frequency**: `5 Hz`, low, may affect the real-time obstacle avoidance, it is recommended to upgrade to `10-20 Hz`.
+    - **Installation position**: <pose>`0 0 0.075 0 0 0</pose> 0`, offset relative to `laser_link` needs to be superimposed with the actual height of the LIDAR in the URDF (`z=0.1246 m`) to ensure that the final position is correct.
+    - **TF Publishing**: robot_state_publisher node runtime publishes the `base_link` → `laser_link` coordinate transformation.
+  - **Simulation Scenarios**:
+    - Scenario 1: [willowgarage](Software\ROS\wheel_robot_sim\src\wheel_robot\worlds\willowgarage.png)
+      - Willow Garage The office environment is a classic simulation scenario used to testing robot navigation, SLAM and human-robot interaction algorithms.
+    - Scenario 2: [cafe](Software\ROS\wheel_robot_sim\src\wheel_robot\worlds\cafe.png)
+      - Cafe World is a simulation of a cafe scene designed to test robot navigation, SLAM and human-robot interaction algorithms in a dynamic environment.
+    - Compare the two
+
         <div style="width: auto; display: table; margin: auto;">
 
-        | **特性**               | **Willow Garage**            | **Cafe World**               |
-        |------------------------|-----------------------------|-----------------------------|
-        | **场景类型**           | 办公环境                    | 服务场景（咖啡馆）          |
-        | **动态元素**           | 静态障碍物为主              | 动态行人 + 可移动物体       |
-        | **测试重点**           | 导航、SLAM                  | 人机交互、避障             |
-        | **复杂度**             | 中等（结构化布局）          | 高（动态干扰多）            |
+        | **Features** | **Willow Garage** | **Cafe World** |
+        |------------------------|---------- -------------------|-----------------------------|
+        | **Scene Types** | Office Environment | Service Scene (Cafe) |
+        | **Dynamic Elements** | Static Obstacle Oriented | Dynamic Pedestrians + Movable Objects |
+        | **Testing Focus** | Navigation, SLAM | Human-Computer Interaction, Obstacle Avoidance | | **Complexity** | Medium (structured layout) | High (lots of dynamic interference) |
 
         </div>
+
 
 <p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:35px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/sim_tftree.png" width="800"/></p>
 
 <p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:35px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/sim_gazebo.png" width="800"/></p>
 
-- **Cartographer + Navigation2**：实现地图构建与导航路径规划。
-  - 地图构建：**Cartographer**；
-    - 介绍：Cartographer 是由 Google 开发的开源实时 SLAM（同步定位与地图构建）系统，支持 2D 和 3D 环境的地图构建。它通过融合多传感器数据（如激光雷达、IMU、里程计等），实现高精度且低漂移的实时建图，广泛应用于机器人、自动驾驶等领域。
-    - 原理：
-      1. **前端扫描匹配**：使用局部子图（Submaps）构建，通过实时激光雷达数据与子图匹配，估计机器人位姿。
-      2. **后端优化**：利用闭环检测（Loop Closure）和全局优化（基于图优化的 SLAM 框架）消除累积误差。
-      3. **多传感器融合**：结合 IMU、里程计等数据，提升位姿估计的鲁棒性。
-    - 优点：
-      - **高效实时性**：支持实时建图，适合动态环境应用。
-      - **多传感器支持**：灵活融合激光雷达、IMU 等数据，适应复杂场景。
-      - **闭环检测强**：显著减少长期运行的累积误差，提升地图全局一致性。
-      - **开源可扩展**：代码结构清晰，支持 2D/3D 建图，社区活跃。
-    - 缺点：
-      - **配置复杂**：参数调节依赖经验，需针对不同传感器和环境优化。
-      - **计算资源需求高**：3D 建图或大规模场景下对硬件要求较高。
-      - **动态环境处理有限**：主要针对静态环境设计，动态障碍物可能影响建图精度。
-    - [配置](Software\ROS\wheel_robot\src\carto\config\carto.lua)：
 
-  - 导航路径规划：**Navigation2**；
-    - 介绍：Navigation2 是 ROS 2 中的官方导航框架，用于移动机器人的路径规划与自主导航。支持全局路径规划、局部避障、恢复行为等功能，适用于轮式机器人、服务机器人等场景。
-    - 原理：
-      1. **全局规划**：基于代价地图（Costmap）和算法（如 A*、Dijkstra）生成全局最优路径。
-      2. **局部规划**：结合动态窗口法（DWA）或 Timed Elastic Band（TEB）算法，实时避障并跟踪路径。
-      3. **行为树控制**：通过行为树（Behavior Tree）管理导航状态（如重规划、恢复模式）。
-    - 优点：
-      - **模块化设计**：插件化架构支持自定义算法（如更换规划器或控制器）。
-      - **动态环境适应**：实时更新代价地图，有效应对动态障碍物。
-      - **跨平台兼容**：基于 ROS 2，支持多种机器人硬件和仿真环境。
-      - **行为树管理**：灵活处理复杂导航逻辑（如故障恢复、多目标切换）。
-    - 缺点：
-      - **实时性局限**：在密集障碍物或复杂地形中，局部规划可能延迟。
-      - **依赖传感器质量**：定位（如 AMCL）和避障效果受传感器精度影响大。
-      - **配置繁琐**：需针对机器人动力学参数（如速度、加速度）精细调参。
-    - [配置](Software\ROS\wheel_robot\src\nav2\param\fishbot_nav2.yaml)：
+- **Cartographer + Navigation2**: Realize map building and navigation path planning.
+  - Map building: **Cartographer**;
+    - Introduction: Cartographer is an open source real-time SLAM (Simultaneous Localization and Map Building) system developed by Google, which supports map building in both 2D and 3D environments. It realizes high-precision and low-drift real-time map building by fusing multi-sensor data (e.g. LIDAR, IMU, odometer, etc.), which is widely used in robotics, autonomous driving and other fields.
+    - Principle:
+      1. **Front-end Scanning Matching**: Using local submaps (Submaps) construction, the robot position is estimated by matching real-time LiDAR data with submaps.
+      2. **Backend Optimization**: eliminates cumulative errors using Loop Closure and Global Optimization (SLAM framework based on graph optimization).
+      3. **Multi-sensor fusion**: combines data from IMU, odometer, etc. to improve the robustness of position estimation.
+    - Advantages:
+      - **Efficient real-time**: supports real-time graph building, suitable for dynamic environment applications.
+      - **Multi-sensor support**: Flexible fusion of LIDAR, IMU and other data to adapt to complex scenes.
+      - **Strong closed-loop detection**: Significantly reduces cumulative errors in long-term operation and improves the global consistency of the map.
+      - **Open source and scalable**: clear code structure, support 2D/3D map building, active community.
+    - Disadvantages:
+      - **Complicated configuration**: parameter tuning relies on experience and needs to be optimized for different sensors and environments.
+      - **High computational resource requirements**: high hardware requirements for 3D mapping or large-scale scenes.
+      - **Limited dynamic environment processing**: mainly designed for static environments, dynamic obstacles may affect the accuracy of map building.
+    - [Configuration](Software\ROS\wheel_robot\src\carto\config\carto.lua):
 
-##### 🚗 实物部署与控制
-在完成SLAM仿真实验后，软件上的嵌合已经基本完成，接下来只需要将仿真时使用的gazebo产生的传感器数据更换为实物使用的传感器数据，并进行相应的控制算法调试；再将算法对机器人的控制通过Raspberry Pi与FOC驱动器的通信协议传递到两轮和舵机上。此外，因仿真时使用简单的两轮差速小车模型，实物搭建的轮子机器人需要进行更复杂的控制算法的调试。
+  - Navigation Path Planning: **Navigation2**;
+    - Introduction: Navigation2 is the official navigation framework in ROS 2, used for path planning and autonomous navigation of mobile robots. It supports global path planning, local obstacle avoidance, recovery behavior, etc. It is suitable for wheeled robots, service robots and other scenarios.
+    - Principle:
+      1. **Global Planning**: Generate the global optimal path based on Costmap and algorithms (e.g., A*, Dijkstra).
+      2. **Local Planning**: Combine with Dynamic Window Approach (DWA) or Timed Elastic Band (TEB) algorithm to avoid obstacles and track the path in real time. 3.
+      3. **Behavior Tree Control**: manages navigation states (e.g., replanning, recovery mode) through a Behavior Tree (BT).
+    - Advantages:
+      - **Modular design**: plug-in architecture supports customization of algorithms (e.g., changing planners or controllers).
+      - **Dynamic environment adaptation**: real-time updating of the cost map to effectively deal with dynamic obstacles.
+      - **Cross-platform compatibility**: Based on ROS 2, supports multiple robot hardware and simulation environments.
+      - **Behavior Tree Management**: Flexible handling of complex navigation logic (e.g. fault recovery, multi-target switching).
+    - Disadvantages:
+      - **Real-time limitations**: localized planning may be delayed in dense obstacles or complex terrain.
+      - **Dependence on sensor quality**: localization (e.g. AMCL) and obstacle avoidance effects are highly affected by sensor accuracy.
+      - **Complicated configuration**: fine tuning of parameters (e.g., velocity, acceleration) for robot dynamics is required.
+    - [Configuration](Software\ROS\wheel_robot\src\nav2\param\fishbot_nav2.yaml):
 
-- **传感器接入与驱动**
-  - **AS5147P**：14位旋转编码器，用于电机位置反馈；
-    - Raspbery Pi同电机驱动板的UART通信占用了Rapsberry的串口终端，会导致Raspberry无法进入系统；
-      - 禁用 UART0 作为系统控制台，并且禁用蓝牙
-      - 取消 Raspberry u-boot 开机等待时间
-    - 接收电机驱动板UART通信线程传来的数据，进行解码；
-  - **CMP10A IMU**：三轴陀螺仪 + 加速度计 + 磁力计 + 气压计；
-    - 通过厂商提供的上位机软件，对IMU模块进行配置校准，并提高采样速率到200Hz；
-    - 将IMU模块与Raspberry Pi连接的USB端口绑定，方便后续直接读取数据；
-    - 编写IMU驱动程序；
-  - **YDLIDAR X3**：激光雷达，360°扫描，0.12–8m 测距范围；
-    - 通过厂商提供的上位机软件，对YDLIDAR模块进行配置校准，并提高采样速率到100Hz；
-    - 在Raspberry Pi上安装YDLIDAR SDK；
-    - 将YDLIDAR模块与Raspberry Pi连接的USB端口绑定，方便后续直接读取数据；
-    - 编写IMU驱动程序；
-- **数据处理**
-  - **odom 里程计**
-    - 将电机驱动板传来的编码器数据进行解码，得到电机位置、速度信息；
-    - 对轮足机器人两个轮子的位置信息进行运动学正解，得到机器人坐标系下的位姿信息；
-    - 输出ROS Odometry消息，供其他节点使用；
-  - **IMU 姿态估计**
-    - 解码IMU模块传来的数据，得到姿态信息；
-    - 输出ROS IMU消息，供其他节点使用；
-  - **YDlidar 点云处理**
-    - 接收YDLIDAR模块传来的数据，进行解码；
-    - 输出ROS laserscan消息，供其他节点使用；
-- **运动控制**
-  - 机器人自平衡：
-    - 平衡控制算法：串级PID控制（速度环+位置环 高度环）；
+##### 🚗 Physical Deployment and Control
+After completing the SLAM simulation experiments, the chimera on the software has basically been completed, and the next step is to just replace the sensor data used in the simulation with the gazebo-generated sensor data used in the simulation to be replaced with the sensor data used in the physical object, and debug the control algorithm accordingly; then the control of the algorithm on the robot is transferred to the two wheels and servos through the communication protocol between the Raspberry Pi and the FOC driver. In addition, because a simple two-wheeled differential cart model is used in the simulation, the wheeled robot built in the real world needs to be debugged with more complex control algorithms.
+
+- **Sensor Access and Driver**
+  - **AS5147P**: 14-bit rotary encoder for motor position feedback;
+    - Raspbery Pi's UART communication with the motor driver board occupies the Rapsberry's serial port terminal, which will cause the Raspberry to be unable to enter the system;
+      - Disable UART0 as the system console and disable Bluetooth
+      - Cancel the Raspberry u-boot boot wait time
+    - Receive data from the motor driver board UART communication thread and decode it;
+  - **CMP10A IMU**: 3-axis gyroscope + accelerometer + magnetometer + barometer;
+    - Configure and calibrate the IMU module through the manufacturer's provided host software and increase the sampling rate to 200Hz;
+    - Connect the IMU module to the Raspberry Pi. Bind the IMU module to the USB port connected to the Raspberry Pi for subsequent direct data reading;
+    - Write the IMU driver;
+  - **YDLIDAR X3**: LIDAR, 360° scanning, 0.12-8m range;
+    - Configure and calibrate the IMU module via the vendor-supplied host computer software and increase the sampling rate to 100Hz; - Configure and calibrate the IMU module via the vendor-supplied host computer software and increase the sampling rate to 100Hz. sampling rate to 100Hz;
+    - Install YDLIDAR SDK on Raspberry Pi;
+    - Bind the YDLIDAR module to the USB port connected to the Raspberry Pi, so as to facilitate the subsequent direct reading of the data;
+    - Write the IMU driver;
+- **Data Processing**
+  - **Dodom Odometer**
+    - Decode the encoder data coming from the motor driver board to get the motor position, position, and distance. Decode the encoder data from the motor driver board to get the motor position and velocity information;
+    - Perform kinematic orthogonal solving of the position information of the two wheels of the wheel-footed robot to get the position information under the robot coordinate system;
+    - Output the ROS Odometry message for other nodes;
+  - **IMU Attitude Estimation**
+    - Decode the data coming from the IMU module to get the attitude information;
+    - Output the ROS IMU message for other nodes;
+  - **YDlidar Point Cloud Processing**
+    - Receive data from YDLIDAR module and decode;
+    - Output ROS laserscan message for other nodes;
+- **Motion Control**
+  - Robot Self-Balancing:
+    - Balance Control Algorithm: Serial PID Control (Velocity Loop + Position Loop Height Loop);
     ...
-  - 机器人运动：
-    - 监听cmd_vel，修改target_linear_vel和target_angular_vel，从而实现运动控制；
-- **SLAM 部署**
+  - Robot Motion:
+    - listens to cmd_vel and modifies target_linear_vel and target_angular_vel for motion control;
+
+- **SLAM deployment**
   ```mermaid
   graph TD
-      %% 节点定义
-      subgraph S1[🟦 底层数据]
-          Sensors[传感器节点<br/>IMU, Laser, Odometry]:::sensor
-          WheelRobot[Wheel Robot节点<br/>发布机器人描述与tf]:::sensor
-      end
 
-      subgraph S2[🟩 功能模块]
-          MotionCtrl[运动控制节点<br/>订阅IMU/监听cmd_vel]:::module
-          Cartographer[Cartographer节点<br/>地图构建与map发布]:::module
-      end
+    %% Node Definitions
+    subgraph S1[🟦 Underlying Data]
+      Sensors[Sensors node<br/>IMU, Laser, Odometry]:::sensor
+      WheelRobot[Wheel Robot node<br/>Publishing Robot Descriptions with tf]:::sensor
+    end
 
-      subgraph S3[🟨 外部交互界面]
-          WebService[Web服务<br/>发送cmd_vel/订阅map]:::external
-      end
+    subgraph S2[🟩 function module]
+      MotionCtrl[MotionControl node<br/>subscribes to IMU/listsens to cmd_vel]:::module
+      Cartographer[Cartographer node<br/>map building & map publishing]:::module
+    end
 
-      %% 数据流连接
-      Sensors -- IMU/Laser/Odom 数据 --> Cartographer
-      Sensors -- IMU 数据 --> MotionCtrl
-      WheelRobot -- 机器人描述/TF --> Cartographer
+    subgraph S3[🟨 External Interactive Interface]
+      WebService[Web Service<br/>Send cmd_vel/Subscribe to map]:::external
+    end
 
-      WebService -- cmd_vel 控制指令 --> MotionCtrl
-      MotionCtrl -- 运动控制反馈 --> Cartographer
-      Cartographer -- map 地图 --> WebService
+    %% Data Flow Connections
+    Sensors -- IMU/Laser/Odom data --> Cartographer
+    Sensors -- IMU data --> MotionCtrl
+    WheelRobot -- Robot Description/TF --> Cartographer
 
-      %% 样式设置
-      classDef sensor fill:#cce5ff,stroke:#3399ff,stroke-width:2px;
-      classDef module fill:#d4edda,stroke:#28a745,stroke-width:2px;
-      classDef external fill:#fff3cd,stroke:#ffc107,stroke-width:2px;
+    WebService -- cmd_vel Control commands --> MotionCtrl
+    MotionCtrl -- Motion control feedback --> Cartographer
+    Cartographer -- map map --> WebService
+
+    %% Style settings
+    classDef sensor fill:#cce5ff,stroke:#3399ff,stroke-width:2px;
+    classDef module fill:#d4edda,stroke:#28a745,stroke-width:2px;
+    classDef external fill:#fff3cd,stroke:#ffc107,stroke-width:2px;
   ```
 
-  - 地图构建：Cartographer；
-    - 启动IMU、Laser、Odometry节点：开始数据接收并发布；
-    - 启动运动控制节点：订阅IMU数据保持平衡，监听cmd_vel进行运动控制；
-    - 启动wheel robot节点：发布机器人描述以及各个link的tf变换；
-    - 启动cartographer节点：订阅激光雷达、IMU、Odometry数据，启动地图构建发布map数据；
-    - 启动web服务：发布cmd_vel运动控制指令，订阅map更新地图显示；
-  - 地图显示
-    - Raspbery Pi 远程桌面进行程序调试和地图显示
-    - Web控制台：地图显示、路径规划、控制指令显示；
+  - Map build: cartographer;
+    - start IMU, Laser, Odometry node: start data receiving and publishing;
+    - start motion control node: subscribe IMU data to keep balance, listen to cmd_vel for motion control;
+    - start wheel robot node: publish robot description and tf transform for each link;
+    - Start cartographer node: subscribe LIDAR, IMU, Odometry data, start map building to publish map data;
+    - Start web service: publish cmd_vel motion control commands, subscribe map to update map display;
+  - Map display
+    - Raspbery Pi Remote Desktop for program debugging and map display
+    - Web console: Map display, path planning, control command display;
 
 
-##### 🌐 Web控制台
-- 地图浏览：实时地图更新、路径显示；
-- 控制功能：方向按钮、虚拟摇杆控制；
+##### 🌐 Web Console
+- Map Browsing: real-time map update, route display;
+- Control Functions: directional buttons, virtual joystick control;
 
 <p align="center" style="margin-top:0px; margin-bottom:0px; margin-left:35px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><img src="Document/images/sim_web.png" width="800"/></p>
 
 
-### 后续工作
+### Follow-up work 
 
-1. 将平衡控制同ROS分离，直接将平衡控制集成到电机驱动板上，减少对Raspberry Pi的依赖；
-2. 引入热管理监控系统，确保长期运行稳定性：添加风扇散热等
-3. 电源管理系统，添加软启动控制，减弱上电时浪涌现象对器件的压力和影响；将对Raspberry和对舵机的供电分离，降低舵机运行时对Raspberry的影响；
-4. 外壳结构优化，尤其是Arm部分，减弱关节的摩擦，得到更加顺滑的运动
-
+1. Separate the balance control from the ROS, and directly integrate the balance control into the motor driver board to reduce the dependence on the Raspberry Pi; 
+2. Introduce a thermal management monitoring system to ensure the long-term stability of the operation: add fan cooling, etc. 
+3. Power management system, add a soft-start control, attenuate the surge phenomenon on the device during the power on the pressure and impact; separate power supply to the Raspberry and to the servo to reduce the impact on the Raspberry during operation; 4. Raspberry and the servo power supply separation, reduce the servo operation on the impact of the Raspberry; 
+4. shell structure optimization, especially the Arm part, weaken the friction of the joints, to get a smoother movement
 
 <p align="right">(<a href="#top">top</a>)</p>
 
