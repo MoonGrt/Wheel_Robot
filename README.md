@@ -644,35 +644,23 @@ The control algorithm uses a three-level closed-loop architecture with position 
   The interaction between the control thread and the peripherals and ADC/FOC interrupts can be summarised as:
 
   ```mermaid
-  graph TD
-      %% Node definitions
-      subgraph S1[🟦 Underlying Data]
-          Sensors[Sensor Node<br/>IMU, Laser, Odometry]:::sensor
-          WheelRobot[Wheel Robot Node<br/>Publishes robot description and tf]:::sensor
-      end
+  sequenceDiagram 
+    participant host computer 
+    participant communication thread 
+    participant control thread 
+    participant ADC/FOC interrupt 
+    participant encoder 
 
-      subgraph S2[🟩 Functional Modules]
-          MotionCtrl[Motion Control Node<br/>Subscribes to IMU / Listens to cmd_vel]:::module
-          Cartographer[Cartographer Node<br/>Map building and map publishing]:::module
-      end
+    host computer->>communication thread: sends target commands (JSON / other formats) 
+    communication thread->> Control thread: update input setpoints (position/velocity/torque) 
+    Control thread->>Encoder: get position, velocity data (including PLL or encoder estimation) 
+    Control thread->>Control thread: preprocessing, trajectory planning according to input mode 
+    Control thread->>Control thread: [Position Loop] calculate position error, update vel_ setpoint Control thread->>Control thread: [Position loop] calculate position error, update vel_ setpoint Control thread->>Control thread: [Position loop] calculate position error, update vel_ setpoint setpoint 
+    Control thread->>Control thread: [Velocity loop] Calculate velocity error, accumulate acceleration integral, generate torque (current) expectation 
+    Control thread->>ADC/FOC interrupt: update current setpoint to FOC module 
+    ADC/FOC interrupt-->>Control thread: collect feedback current, trigger current loop PI regulation (FOC) 
+    ADC/ ADC/FOC interrupt-->>PWM driver: Generate PWM waveform according to the voltage command from FOC module.
 
-      subgraph S3[🟨 External Interfaces]
-          WebService[Web Service<br/>Sends cmd_vel / Subscribes to map]:::external
-      end
-
-      %% Data flow connections
-      Sensors -- IMU/Laser/Odom Data --> Cartographer
-      Sensors -- IMU Data --> MotionCtrl
-      WheelRobot -- Robot Description/TF --> Cartographer
-
-      WebService -- cmd_vel Control Command --> MotionCtrl
-      MotionCtrl -- Motion Control Feedback --> Cartographer
-      Cartographer -- map Data --> WebService
-
-      %% Style settings
-      classDef sensor fill:#cce5ff,stroke:#3399ff,stroke-width:2px;
-      classDef module fill:#d4edda,stroke:#28a745,stroke-width:2px;
-      classDef external fill:#fff3cd,stroke:#ffc107,stroke-width:2px;
   ```
 
   In this process:
