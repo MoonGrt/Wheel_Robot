@@ -48,6 +48,17 @@ ros2 launch imu imu.launch.py
 
 
 ### ydlidar
+#### 安装 YDLidar-SDK
+解压YDLidar-SDK-master.tar.xz, 在解压后的文件夹中, 执行:
+```
+mkdir build
+cd build
+cmake ..
+make -j4
+sudo make install
+```
+> 然后就可以删除该文件夹
+
 #### 绑定 ydlidar USB设备
 > 注意: imu 和 ydlidar 的USB-ID完全相同，因此使用CP210xSetIDs.exe工具将 ydlidar 的 serial 项 从默认的"0001"改为"0002"
 
