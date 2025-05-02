@@ -41,6 +41,12 @@ sudo pip3 install transforms3d
 sudo apt-get install ros-foxy-tf-transformations
 ```
 
+### 安装 Cartographer
+```bash
+sudo apt install ros-foxy-cartographer
+sudo apt install ros-foxy-cartographer-ros
+```
+
 ### 安装 python 库
 - 模糊PID控制库: `pip install scipy scikit-fuzzy networkx`
 
