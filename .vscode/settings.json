@@ -89,6 +89,7 @@
         "stm32f4xx_hal.h": "c",
         "arm_math.h": "c",
         "odrive_main.h": "c",
-        "open_loop_controller.hpp": "c"
+        "open_loop_controller.hpp": "c",
+        "rthw.h": "c"
     }
 }
