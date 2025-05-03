@@ -77,6 +77,55 @@ class ModorNode(Node):
         super().__init__('motor_node')
         self.motor = None
 
+        # 机器人物理参数
+        self.x = 0.0
+        self.y = 0.0
+        self.wheel_radius = 0.0265  # 轮子半径 (meters)
+        self.wheel_base = 0.174  # 车轮间距 (meters)
+
+        # 控制参数
+        self.balance_kp = 5.0
+        self.balance_kd = 0.1
+        self.balance_ki = 0
+        self.velocity_kp = 5
+        self.velocity_kd = 0
+        self.velocity_ki = 0
+
+        # 目标角度
+        self.target_roll = 0
+        self.target_pitch = 0
+        # 上次回调时间
+        self.last_callback_time = time.time()
+        self.last_time = time.time()
+        # 误差项
+        self.prev_error = 0.0
+        self.integral = 0.0
+        # 运动参数
+        self.target_linear = 0.0
+        self.target_angular = 0.0
+        self.wheel_base = 0.174    # 车轮间距 (meters)
+        self.wheel_radius = 0.026  # 轮子半径 (meters)
+        # 初始化模糊控制器
+        self.fuzzy_enable = False
+        if self.fuzzy_enable:
+            self.setup_fuzzy_controller()
+
+        self.pitch_max = 0.383
+        self.pitch_min = -0.485
+        self.pitch_mid = (self.pitch_max + self.pitch_min) / 2
+        self.max_speed = 50.0  # 电机最大转速 (rad/s)
+        self.max_angle = 90.0  #
+        self.min_angle = 0.0  #
+
+        self.max_samples = 1000    # 启动时采样 1000 次
+        self.pitch_sum = 0
+        self.sample_count = 0
+        self.calibration_complete = True
+
+        self.imu_processor = IMUProcessor()
+        self.kf_roll = KalmanFilter()
+        self.kf_pitch = KalmanFilter()
+
         # 连接 Motor
         try:
             self.motor = Serial(port=port_name, baudrate=baudrate, timeout=0.1)
@@ -101,55 +150,6 @@ class ModorNode(Node):
         # 初始化订阅
         self.imu_sub = self.create_subscription(Imu, 'imu', self.imu_callback, 10)
         self.cmd_vel_sub = self.create_subscription(Twist, 'cmd_vel', self.cmd_vel_callback, 10)
-
-        # 机器人物理参数
-        self.x = 0.0
-        self.y = 0.0
-        self.wheel_radius = 0.0265  # 轮子半径 (meters)
-        self.wheel_base = 0.174  # 车轮间距 (meters)
-
-        # 控制参数
-        self.balance_kp = 30.0
-        self.balance_ki = 1
-        self.balance_kd = 1
-        self.velocity_kp = 5
-        self.velocity_ki = 0
-        self.velocity_kd = 0
-
-        # 目标角度
-        self.target_roll = 0
-        self.target_pitch = -0.04
-        # 上次回调时间
-        self.last_callback_time = time.time()
-        self.last_time = time.time()
-        # 误差项
-        self.prev_error = 0.0
-        self.integral = 0.0
-        # 运动参数
-        self.target_linear = 0.0
-        self.target_angular = 0.0
-        self.wheel_base = 0.174    # 车轮间距 (meters)
-        self.wheel_radius = 0.026  # 轮子半径 (meters)
-        # 初始化模糊控制器
-        self.fuzzy_enable = False
-        if self.fuzzy_enable:
-            self.setup_fuzzy_controller()
-
-        self.pitch_max = 0.4832998220
-        self.pitch_min = -0.6481068829
-        self.pitch_mid = (self.pitch_max + self.pitch_min) / 2
-        self.max_speed = 50.0  # 电机最大转速 (rad/s)
-        self.max_angle = 90.0  #
-        self.min_angle = 0.0  #
-
-        self.max_samples = 1000    # 启动时采样 1000 次
-        self.pitch_sum = 0
-        self.sample_count = 0
-        self.calibration_complete = True
-
-        self.imu_processor = IMUProcessor()
-        self.kf_roll = KalmanFilter()
-        self.kf_pitch = KalmanFilter()
 
     def setup_fuzzy_controller(self):
         """ 设置模糊逻辑控制器 """
@@ -208,28 +208,26 @@ class ModorNode(Node):
     def imu_callback(self, msg:Imu):
         self.last_callback_time = time.time()
 
-        # 提取四元数（ROS2的Imu消息中四元数顺序为 x,y,z,w）
-        q = [msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w]
-        # 将四元数转换为欧拉角（Roll, Pitch, Yaw，单位为弧度）
-        # pitch: forward; roll, left-right
-        (roll, pitch, yaw) = tf.euler_from_quaternion(q)
-        # self.get_logger().info(f'Roll1: {roll:.10f}, Pitch1: {pitch:.10f}')
+        # # 提取四元数（ROS2的Imu消息中四元数顺序为 x,y,z,w）
+        # q = [msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w]
+        # # 将四元数转换为欧拉角（Roll, Pitch, Yaw，单位为弧度）
+        # # pitch: forward; roll, left-right
+        # (roll, pitch, yaw) = tf.euler_from_quaternion(q)
+        # # print(f'Roll1: {roll:.10f}, Pitch1: {pitch:.10f}')
 
-        # # 互补滤波计算角度
-        # accel_x, accel_y, accel_z = msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z
-        # gyro_x, gyro_y, gyro_z = msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z
-        # roll, pitch = self.imu_processor.update([accel_x, accel_y, accel_z], [gyro_x, gyro_y, gyro_z])
-        # # 卡尔曼滤波计算角度
-        # roll = self.kf_roll.update(gyro_x, roll)
-        # pitch = self.kf_pitch.update(gyro_y, pitch)
-        # self.get_logger().info(f'Roll2: {roll:.10f}, Pitch2: {pitch:.10f}')
+        # 互补滤波计算角度
+        accel_x, accel_y, accel_z = msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z
+        gyro_x, gyro_y, gyro_z = msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z
+        roll, pitch = self.imu_processor.update([accel_x, accel_y, accel_z], [gyro_x, gyro_y, gyro_z])
+        # 卡尔曼滤波计算角度
+        roll = self.kf_roll.update(gyro_x, roll)
+        pitch = self.kf_pitch.update(gyro_y, pitch)
+        print(f'Roll2: {roll:.10f}, Pitch2: {pitch:.10f}')
 
         # 安全保护（角度过大时停止）
-        # if (abs(pitch-self.pitch_mid) > 0.30):
-        #     # self.motor_idle()
-        #     self.motor.axis0.controller.input_vel = 0
-        #     self.motor.axis1.controller.input_vel = 0
-        #     return
+        if (abs(pitch-self.pitch_mid) > 0.25):
+            self.motor.write('v 0 0.0 0.0\nv 1 0.0 0.0\n'.encode())
+            return
 
         if not self.calibration_complete:
             if self.sample_count < self.max_samples:
@@ -245,9 +243,7 @@ class ModorNode(Node):
             return  # 在校准期间不进行 PID 控制
 
         left_speed, right_speed = self.balance_compute(pitch)
-        # print(f"Left={left_speed}, Right={right_speed}")
-        # self.set_motor_speeds(left_speed, right_speed, direction=1)
-
+        self.set_motor_speeds(left_speed, right_speed, direction=1)
         self.read_and_publish()
 
     def balance_compute(self, pitch):
@@ -267,8 +263,8 @@ class ModorNode(Node):
             # self.get_logger().info(f'error: {error:.10f}, d_error: {derivative:.10f}')
         else:
             # PID 控制计算
-            correction = self.balance_kp * error + self.balance_ki * self.integral + self.balance_kd * derivative
-            # print(f'error: {error:.10f}, integral: {self.integral:.10f}, derivative: {derivative:.10f}')
+            correction = self.balance_kp * error + self.balance_kd * derivative + self.balance_ki * self.integral
+            print(f'error: {error:.10f}, integral: {self.integral:.10f}, derivative: {derivative:.10f}')
             # print(f'error: {self.balance_kp * error:.10f}, integral: {self.balance_ki * self.integral:.10f}, derivative: {self.balance_kd * derivative:.10f}')
 
         # 更新状态
@@ -289,7 +285,6 @@ class ModorNode(Node):
             # 切换到闭环控制
             self.motor_send_cmd(f'w axis0.requested_state {AxisState.CLOSED_LOOP_CONTROL}')
             self.motor_send_cmd(f'w axis1.requested_state {AxisState.CLOSED_LOOP_CONTROL}')
-            time.sleep(0.1)
             errors = self.check_motor_error()
             if errors:
                 self.handle_motor_error(errors)
@@ -466,7 +461,6 @@ class ModorNode(Node):
         joint_msg.position = [pos0 * 2 * math.pi, pos1 * 2 * math.pi]  # 轮子旋转角度
         joint_msg.velocity = [vel0, vel1]  # 轮子速度
         self.joint_pub.publish(joint_msg)
-        self.joint_pub.publish(joint_msg)
 
         # self.get_logger().info(f"x: {self.x:.10f}, y: {self.y:.10f}, theta: {self.theta:.10f}")
 
@@ -479,15 +473,17 @@ class ModorNode(Node):
             right_speed = -right_speed
         try:
             # 根据实际电机方向可能需要调整符号
-            self.motor.write(f'v 0 {left_speed} 0.0\n'.encode())
-            self.motor.write(f'v 1 {right_speed} 0.0\n'.encode())
-            pass
+            setspeed = f'v 0 {left_speed:.4f} 0.0\nv 1 {right_speed:.4f} 0.0\n'
+            print(setspeed)
+            self.motor.write(setspeed.encode())
         except Exception as e:
             self.get_logger().error(f"Motor control failed: {str(e)}")
 
     def set_servo_angle(self, left_angle, right_angle):
-        # left_angle = max(min(left_angle, self.max_angle), self.min_angle)
-        # right_angle = max(min(right_angle, self.max_angle), self.min_angle)
+        # 限幅处理
+        left_angle = max(min(left_angle, self.max_angle), self.min_angle)
+        right_angle = max(min(right_angle, self.max_angle), self.min_angle)
+        # 
         servo0_angle = 90 + right_angle
         servo1_angle = 100 - right_angle
         servo2_angle = 90 - left_angle

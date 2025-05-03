@@ -41,15 +41,19 @@ sudo pip3 install transforms3d
 sudo apt-get install ros-foxy-tf-transformations
 ```
 
-### 安装 Cartographer
+### 安装 Cartographer Nav2
 ```bash
 sudo apt install ros-foxy-cartographer
 sudo apt install ros-foxy-cartographer-ros
+
+sudo apt install ros-foxy-nav2-*
 ```
 
 ### 安装 python 库
 - 模糊PID控制库: `pip install scipy scikit-fuzzy networkx`
 
+### 安装 rosbridge_server
+`sudo apt install ros-$ROS_DISTRO-rosbridge-suite`
 
 ### 安装 Odrive
 - `pip install odrive`

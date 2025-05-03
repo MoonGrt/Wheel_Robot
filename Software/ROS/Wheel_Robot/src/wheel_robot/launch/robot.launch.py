@@ -23,11 +23,11 @@ def generate_launch_description():
     )
 
 
-    # Odom
-    odom_node = Node(
-        package='odom',
-        executable='odom',
-        name='odom_node',
+    # Motor
+    motor_node = Node(
+        package='motor',
+        executable='motor',
+        name='motor_node',
         output='screen',
     )
 
@@ -71,7 +71,7 @@ def generate_launch_description():
 
 
     # 启动 HTTP 服务器
-    web_ctrl_dir = os.path.expanduser('~/web_ctrl')
+    web_ctrl_dir = os.path.expanduser('../web_ctrl')
     http_server = ExecuteProcess(
         cmd=['python3', '-m', 'http.server', '8000'],
         output='screen',
@@ -80,10 +80,10 @@ def generate_launch_description():
 
     return LaunchDescription([
         robot_state_publisher_node,
-        odom_node,
+        motor_node,
         imu_node,
         ydlidar_params,
         ydlidar_node,
-        rosbridge_websocket_node,  # 以 Node 方式启动 rosbridge_websocket
-        # http_server,  # 运行 HTTP 服务器
+        rosbridge_websocket_node,
+        # http_server, # TODO: Finish
     ])

@@ -4,18 +4,10 @@
 
 ### wheel_robot
 #### 运行 wheel_robot 节点
-> 该 launch 文件同时运行robot, imu, ydlidar, odom, web节点
+> 该 launch 文件同时运行robot, imu, ydlidar, motor, web节点
 ```
 source install/setup.bash
 ros2 launch wheel_robot robot.launch.py
-```
-
-
-### balance
-#### 运行 balance 节点
-> 到目录中直接运行py文件(使用ROS2运行时motor库报错)
-```
-python3 src/balance/balance/balance.py
 ```
 
 
