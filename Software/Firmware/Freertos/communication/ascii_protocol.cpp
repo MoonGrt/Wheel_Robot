@@ -385,6 +385,14 @@ void AsciiProtocol::cmd_read_property(char * pStr, bool use_checksum) {
 
     if (sscanf(pStr, "r %255s", name) < 1) {
         respond(use_checksum, "invalid command format");
+    } else if (strcmp(name, "p") == 0) {
+        respond(use_checksum, "%f %f",
+            (double)axes[0].encoder_.pos_estimate_.any().value_or(0.0f),
+            (double)axes[1].encoder_.pos_estimate_.any().value_or(0.0f));
+    } else if (strcmp(name, "v") == 0) {
+        respond(use_checksum, "%f %f",
+            (double)axes[0].encoder_.vel_estimate_.any().value_or(0.0f),
+            (double)axes[1].encoder_.vel_estimate_.any().value_or(0.0f));
     } else {
         Introspectable property = root_obj.get_child(name, sizeof(name));
         const StringConvertibleTypeInfo* type_info = dynamic_cast<const StringConvertibleTypeInfo*>(property.get_type_info());

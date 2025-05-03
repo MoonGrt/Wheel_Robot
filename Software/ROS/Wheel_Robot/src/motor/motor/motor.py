@@ -77,6 +77,20 @@ class ModorNode(Node):
         super().__init__('motor_node')
         self.motor = None
 
+        # 连接 Motor
+        try:
+            self.motor = Serial(port=port_name, baudrate=baudrate, timeout=0.1)
+            self.get_logger().info("\033[32mMotor serial port connection established...\033[0m")
+            self.motor_setup()
+            self.get_logger().info("\033[32mMotor Setup Successed...\033[0m")
+            self.set_servo_angle(15, 15)
+        except Exception as e:
+            self.get_logger().error(f"error: {str(e)}")
+            self.get_logger().info("\033[31mSerial port opening failure\033[0m")
+            if self.motor:
+                self.motor.close()
+            exit(0)
+
         # 创建发布者
         self.odom_frame_id = 'odom'
         self.child_frame_id = 'base_link'
@@ -93,20 +107,6 @@ class ModorNode(Node):
         self.y = 0.0
         self.wheel_radius = 0.0265  # 轮子半径 (meters)
         self.wheel_base = 0.174  # 车轮间距 (meters)
-
-        # 连接 Motor
-        try:
-            self.motor = Serial(port=port_name, baudrate=baudrate, timeout=0.5)
-            self.get_logger().info("\033[32mMotor serial port connection established...\033[0m")
-            self.motor_setup()
-            self.get_logger().info("\033[32mMotor Setup Successed...\033[0m")
-            # self.set_servo_angle(15, 15)
-        except Exception as e:
-            self.get_logger().error(f"error: {str(e)}")
-            self.get_logger().info("\033[31mSerial port opening failure\033[0m")
-            if self.motor:
-                self.motor.close()
-            exit(0)
 
         # 控制参数
         self.balance_kp = 30.0
@@ -310,37 +310,8 @@ class ModorNode(Node):
     def motor_idle(self):
         self.motor_send_cmd(f'w axis0.requested_state {AxisState.IDLE}')
         self.motor_send_cmd(f'w axis1.requested_state {AxisState.IDLE}')
-
-    def set_motor_speeds(self, left_speed, right_speed, direction=1):
-        # 限幅处理
-        left_speed = max(min(left_speed, self.max_speed), -self.max_speed)
-        right_speed = max(min(right_speed, self.max_speed), -self.max_speed)
-        if direction:
-            left_speed = -left_speed
-            right_speed = -right_speed
-        # self.get_logger().info(f"Left1={left_speed}, Right1={right_speed}")
-        try:
-            # 根据实际电机方向可能需要调整符号
-            self.motor.axis0.controller.input_vel = left_speed  # 左电机
-            self.motor.axis1.controller.input_vel = right_speed  # 右电机
-            # left_speed = self.motor.axis0.encoder.vel_estimate
-            # right_speed = self.motor.axis0.encoder.vel_estimate
-        except Exception as e:
-            self.get_logger().error(f"电机控制失败: {str(e)}")
-        # self.get_logger().info(f"Left2={left_speed}, Right2={right_speed}")
-
-    def set_servo_angle(self, left_angle, right_angle):
-        # left_angle = max(min(left_angle, self.max_angle), self.min_angle)
-        # right_angle = max(min(right_angle, self.max_angle), self.min_angle)
-        try:
-            # 根据实际电机方向可能需要调整符号
-            self.motor.servo0.angle = 90 - right_angle
-            self.motor.servo1.angle = 80 + right_angle
-            self.motor.servo2.angle = 90 + left_angle
-            self.motor.servo3.angle = 100 - left_angle
-        except Exception as e:
-            self.get_logger().error(f"舵机控制失败: {str(e)}")
-        pass
+        self.motor_send_cmd('v 0 0.0 0.0')
+        self.motor_send_cmd('v 1 0.0 0.0')
 
     def check_motor_error(self, clear=True, full=True):
         errors = []
@@ -416,7 +387,7 @@ class ModorNode(Node):
                 for code in decoded:
                     # 示例：根据错误类型分类处理
                     if "DRV_FAULT" in code:
-                        pass
+                        self.motor_send_cmd('sc')
                     elif "OVER_TEMP" in code:
                         pass
                     elif "UNKNOWN_PHASE_ESTIMATE" in code:
@@ -435,11 +406,9 @@ class ModorNode(Node):
     def read_and_publish(self):
         # 解析串口数据：四个浮点数
         try:
-            pos0 = float(self.motor_send_cmd('r axis0.encoder.pos_estimate'))
-            pos1 = float(self.motor_send_cmd('r axis1.encoder.pos_estimate'))
-            vel0 = float(self.motor_send_cmd('r axis0.encoder.vel_estimate'))
-            vel1 = float(self.motor_send_cmd('r axis1.encoder.vel_estimate'))
-            print(f"pos0={-pos0}, vel0={-vel0}, pos1={pos1}, vel1={vel1}")
+            pos0, pos1 = map(float, self.motor_send_cmd('r p').split())
+            vel0, vel1 = map(float, self.motor_send_cmd('r v').split())
+            # print(f"pos0={-pos0}, vel0={-vel0}, pos1={pos1}, vel1={vel1}")
         except ValueError:
             self.get_logger().warn('Invalid data format')
             return
@@ -501,6 +470,35 @@ class ModorNode(Node):
 
         # self.get_logger().info(f"x: {self.x:.10f}, y: {self.y:.10f}, theta: {self.theta:.10f}")
 
+    def set_motor_speeds(self, left_speed, right_speed, direction=1):
+        # 限幅处理
+        left_speed = max(min(left_speed, self.max_speed), -self.max_speed)
+        right_speed = max(min(right_speed, self.max_speed), -self.max_speed)
+        if direction:
+            left_speed = -left_speed
+            right_speed = -right_speed
+        try:
+            # 根据实际电机方向可能需要调整符号
+            self.motor.write(f'v 0 {left_speed} 0.0\n'.encode())
+            self.motor.write(f'v 1 {right_speed} 0.0\n'.encode())
+            pass
+        except Exception as e:
+            self.get_logger().error(f"Motor control failed: {str(e)}")
+
+    def set_servo_angle(self, left_angle, right_angle):
+        # left_angle = max(min(left_angle, self.max_angle), self.min_angle)
+        # right_angle = max(min(right_angle, self.max_angle), self.min_angle)
+        servo0_angle = 90 + right_angle
+        servo1_angle = 100 - right_angle
+        servo2_angle = 90 - left_angle
+        servo3_angle = 80 + left_angle
+        try:
+            # 根据实际电机方向可能需要调整符号
+            self.motor_send_cmd(f'm 0 {servo0_angle} 1 {servo1_angle} 2 {servo2_angle} 3 {servo3_angle}')
+        except Exception as e:
+            self.get_logger().error(f"Servo control failed: {str(e)}")
+        pass
+
 
 def main(args=None):
     rclpy.init(args=args)
@@ -513,8 +511,8 @@ def main(args=None):
         pass
     # 停止 ROS2 节点
     finally:
-        motor_node.motor.close()
         motor_node.motor_idle()
+        motor_node.motor.close()
         motor_node.destroy_node()
         rclpy.shutdown()
 
