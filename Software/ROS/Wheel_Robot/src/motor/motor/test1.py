@@ -82,7 +82,7 @@ class ModorNode(Node):
         self.motor = None
 
         # === 机器人物理参数（可配置） ===
-        self.mass = 1.5                # 质量 kg
+        self.mass = 1.43               # 质量 kg
         self.wheel_radius = 0.026      # 轮子半径 m
         self.wheel_base = 0.174        # 轮距 m
         self.gravity = 9.81            # 重力加速度
@@ -189,11 +189,11 @@ class ModorNode(Node):
         self.prev_pitch = pitch
         self.last_time = current_time
 
-        # # 安全角度限制
-        # if abs(pitch - self.target_pitch) > 0.30:
-        #     self.motor.write('v 0 0.0 0.0\nv 1 0.0 0.0\n'.encode())
-        # else:
-        #     self.set_motor_speeds(left_speed, right_speed, direction=1)
+        # 安全角度限制
+        if abs(pitch - self.target_pitch) > 0.30:
+            self.motor.write('v 0 0.0 0.0\nv 1 0.0 0.0\n'.encode())
+        else:
+            self.set_motor_speeds(left_speed, right_speed, direction=1)
 
     def balance_compute(self, pitch, pitch_velocity):
         # 状态向量（单位：弧度 & 弧度/秒）

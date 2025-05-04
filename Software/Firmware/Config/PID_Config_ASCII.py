@@ -371,30 +371,32 @@ class PIDConfig(QMainWindow):
         while self.running and self.motor:
             elapsed_time = time.time() - self.start_time
 
-            if self.motor_running:
-                if self.current_mode == "position":
-                    value = float(self.motor_send_cmd(f'r {self.current_axis}.encoder.pos_estimate'))
-                    # print(f"pos: {value:.4f}")
-                    self.x_pos_data.append(elapsed_time)
-                    self.y_pos_data.append(value)
-                    if len(self.x_pos_data) > self.max_data_points:
-                        self.x_pos_data.pop(0)
-                        self.y_pos_data.pop(0)
-                    self.ax.clear()
-                    self.ax.plot(self.x_pos_data, self.y_pos_data, 'r-')
-                else:
-                    value = float(self.motor_send_cmd(f'r {self.current_axis}.encoder.vel_estimate'))
-                    # print(f"vel: {value:.4f}")
-                    self.x_vel_data.append(elapsed_time)
-                    self.y_vel_data.append(value)
-                    if len(self.x_vel_data) > self.max_data_points:
-                        self.x_vel_data.pop(0)
-                        self.y_vel_data.pop(0)
-                    self.ax.clear()
-                    self.ax.plot(self.x_vel_data, self.y_vel_data, 'b-')
-                    # self.ax.set_ylim(-5, 5)  # 速度模式固定 Y 轴范围
-                self.canvas.draw()
-
+            try:
+                if self.motor_running:
+                    if self.current_mode == "position":
+                        value = float(self.motor_send_cmd(f'r {self.current_axis}.encoder.pos_estimate'))
+                        # print(f"pos: {value:.4f}")
+                        self.x_pos_data.append(elapsed_time)
+                        self.y_pos_data.append(value)
+                        if len(self.x_pos_data) > self.max_data_points:
+                            self.x_pos_data.pop(0)
+                            self.y_pos_data.pop(0)
+                        self.ax.clear()
+                        self.ax.plot(self.x_pos_data, self.y_pos_data, 'r-')
+                    else:
+                        value = float(self.motor_send_cmd(f'r {self.current_axis}.encoder.vel_estimate'))
+                        # print(f"vel: {value:.4f}")
+                        self.x_vel_data.append(elapsed_time)
+                        self.y_vel_data.append(value)
+                        if len(self.x_vel_data) > self.max_data_points:
+                            self.x_vel_data.pop(0)
+                            self.y_vel_data.pop(0)
+                        self.ax.clear()
+                        self.ax.plot(self.x_vel_data, self.y_vel_data, 'b-')
+                        # self.ax.set_ylim(-5, 5)  # 速度模式固定 Y 轴范围
+                    self.canvas.draw()
+            except Exception as e:
+                print(f"{e}")
             time.sleep(0.01)
 
     def motor_idle(self):

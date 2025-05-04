@@ -149,8 +149,7 @@ class ModorNode(Node):
         # 数据记录
         self.plot_num = 1000  # 滑动窗口长度
         self.error_data = deque([0.0]*self.plot_num, maxlen=self.plot_num)
-        self.left_speed_data = deque([0.0]*self.plot_num, maxlen=self.plot_num)
-        self.right_speed_data = deque([0.0]*self.plot_num, maxlen=self.plot_num)
+        self.speed_data = deque([0.0]*self.plot_num, maxlen=self.plot_num)
         # 启动绘图线程
         self.plot_thread = threading.Thread(target=self.live_plot, daemon=True).start()
 
@@ -204,11 +203,11 @@ class ModorNode(Node):
         left_speed, right_speed = self.balance_compute(pitch)
         print(f'ls: {left_speed:.4f}, rs: {right_speed:.4f}')
 
-        # 安全角度限制
-        if abs(pitch - self.pitch_mid) > 0.30:
-            self.motor.write('v 0 0.0 0.0\nv 1 0.0 0.0\n'.encode())
-        else:
-            self.set_motor_speeds(left_speed, right_speed, direction=0)
+        # # 安全角度限制
+        # if abs(pitch - self.pitch_mid) > 0.30:
+        #     self.motor.write('v 0 0.0 0.0\nv 1 0.0 0.0\n'.encode())
+        # else:
+        #     self.set_motor_speeds(left_speed, right_speed, direction=0)
 
         # self.read_and_publish()
 
@@ -238,8 +237,7 @@ class ModorNode(Node):
 
         # 记录日志
         self.error_data.append(error)
-        self.left_speed_data.append(left_speed)
-        self.right_speed_data.append(right_speed)
+        self.speed_data.append(left_speed)
 
         return left_speed, right_speed
 
@@ -256,7 +254,7 @@ class ModorNode(Node):
         ax1.grid(True)
 
         # 第二个子图：左右轮速度
-        left_line, = ax2.plot(self.left_speed_data, label='Left Speed', color='tab:blue')
+        left_line, = ax2.plot(self.speed_data, label='Speed', color='tab:blue')
         ax2.set_ylabel("Speed")
         ax2.set_ylim(-2, 2)  # 根据你电机输出的范围设定
         ax2.set_title("Motor Speeds")
@@ -265,7 +263,7 @@ class ModorNode(Node):
 
         while True:
             error_line.set_ydata(self.error_data)
-            left_line.set_ydata(self.left_speed_data)
+            left_line.set_ydata(self.speed_data)
 
             x_range = range(len(self.error_data))
             error_line.set_xdata(x_range)
