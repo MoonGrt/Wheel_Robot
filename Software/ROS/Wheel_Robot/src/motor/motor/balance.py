@@ -230,7 +230,7 @@ class BalanceBot(Node):
                 self.calibration_complete = True
             return  # 在校准期间不进行 PID 控制
 
-        self.balance_compute(pitch, motor_enable=False)
+        self.balance_compute(pitch, motor_enable=True)
 
     def balance_compute(self, pitch, motor_enable=True):
         # 安全保护（角度过大时停止）
@@ -298,10 +298,10 @@ class BalanceBot(Node):
         # right_angle = max(min(right_angle, self.max_angle), self.min_angle)
         try:
             # 根据实际电机方向可能需要调整符号
-            self.odrive.servo0.angle = 90 - right_angle
-            self.odrive.servo1.angle = 80 + right_angle
-            self.odrive.servo2.angle = 90 + left_angle
-            self.odrive.servo3.angle = 100 - left_angle
+            self.odrive.servo0.angle = 90 + right_angle
+            self.odrive.servo1.angle = 100 - right_angle
+            self.odrive.servo2.angle = 90 - left_angle
+            self.odrive.servo3.angle = 80 + left_angle
         except Exception as e:
             self.get_logger().error(f"舵机控制失败: {str(e)}")
         pass

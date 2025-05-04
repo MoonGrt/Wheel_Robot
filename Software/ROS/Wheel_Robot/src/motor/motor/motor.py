@@ -1,8 +1,10 @@
-import rclpy, math, time
+import rclpy, math, time, threading
 import numpy as np
 import skfuzzy as fuzz
 import skfuzzy.control as ctrl
 import tf_transformations as tf
+import matplotlib.pyplot as plt
+from collections import deque
 from serial import Serial
 from rclpy.node import Node
 from sensor_msgs.msg import Imu
@@ -14,7 +16,7 @@ from odrive.enums import *
 
 class KalmanFilter:
     def __init__(self):
-        self.dt = 0.01  # 采样时间
+        self.dt = 0.005  # 采样时间
         # 状态变量 [角度, 角速度]
         self.x = np.array([[0], [0]])
         # 状态转移矩阵
@@ -52,7 +54,7 @@ class KalmanFilter:
 class IMUProcessor:
     def __init__(self):
         self.alpha = 0.98  # 互补滤波系数
-        self.dt = 0.01  # 采样周期
+        self.dt = 0.005  # 采样周期
         self.roll = 0.0
         self.pitch = 0.0
 
@@ -80,22 +82,19 @@ class ModorNode(Node):
         # 机器人物理参数
         self.x = 0.0
         self.y = 0.0
-        self.wheel_radius = 0.0265  # 轮子半径 (meters)
-        self.wheel_base = 0.174  # 车轮间距 (meters)
 
         # 控制参数
-        self.balance_kp = 5.0
-        self.balance_kd = 0.1
+        self.balance_kp = 8.0
+        self.balance_kd = 0
         self.balance_ki = 0
-        self.velocity_kp = 5
-        self.velocity_kd = 0
-        self.velocity_ki = 0
+        # self.velocity_kp = 5
+        # self.velocity_kd = 0
+        # self.velocity_ki = 0
 
         # 目标角度
         self.target_roll = 0
         self.target_pitch = 0
         # 上次回调时间
-        self.last_callback_time = time.time()
         self.last_time = time.time()
         # 误差项
         self.prev_error = 0.0
@@ -105,19 +104,15 @@ class ModorNode(Node):
         self.target_angular = 0.0
         self.wheel_base = 0.174    # 车轮间距 (meters)
         self.wheel_radius = 0.026  # 轮子半径 (meters)
-        # 初始化模糊控制器
-        self.fuzzy_enable = False
-        if self.fuzzy_enable:
-            self.setup_fuzzy_controller()
 
-        self.pitch_max = 0.383
-        self.pitch_min = -0.485
+        self.pitch_max = 0.380
+        self.pitch_min = -0.483
         self.pitch_mid = (self.pitch_max + self.pitch_min) / 2
-        self.max_speed = 50.0  # 电机最大转速 (rad/s)
+        self.max_speed = 5.0  # 电机最大转速 (rad/s)
         self.max_angle = 90.0  #
         self.min_angle = 0.0  #
 
-        self.max_samples = 1000    # 启动时采样 1000 次
+        self.max_samples = 1000  # 启动时采样 1000 次
         self.pitch_sum = 0
         self.sample_count = 0
         self.calibration_complete = True
@@ -129,10 +124,10 @@ class ModorNode(Node):
         # 连接 Motor
         try:
             self.motor = Serial(port=port_name, baudrate=baudrate, timeout=0.1)
+            self.set_servo_angle(15, 15)
             self.get_logger().info("\033[32mMotor serial port connection established...\033[0m")
             self.motor_setup()
             self.get_logger().info("\033[32mMotor Setup Successed...\033[0m")
-            self.set_servo_angle(15, 15)
         except Exception as e:
             self.get_logger().error(f"error: {str(e)}")
             self.get_logger().info("\033[31mSerial port opening failure\033[0m")
@@ -151,54 +146,13 @@ class ModorNode(Node):
         self.imu_sub = self.create_subscription(Imu, 'imu', self.imu_callback, 10)
         self.cmd_vel_sub = self.create_subscription(Twist, 'cmd_vel', self.cmd_vel_callback, 10)
 
-    def setup_fuzzy_controller(self):
-        """ 设置模糊逻辑控制器 """
-        # 定义模糊变量
-        self.error = ctrl.Antecedent(np.arange(-0.03, 0.03, 0.001), 'error')
-        self.d_error = ctrl.Antecedent(np.arange(-0.1, 0.1, 0.001), 'd_error')
-        self.pid_output = ctrl.Consequent(np.arange(-1, 1, 0.001), 'pid_output')
-
-        # 隶属函数
-        self.error.automf(5)
-        self.d_error.automf(5)
-        self.pid_output.automf(5)
-
-        # 规则集
-        self.rules = [
-            ctrl.Rule(self.error['poor'] & self.d_error['poor'], self.pid_output['good']),
-            ctrl.Rule(self.error['poor'] & self.d_error['mediocre'], self.pid_output['decent']),
-            ctrl.Rule(self.error['poor'] & self.d_error['average'], self.pid_output['average']),
-            ctrl.Rule(self.error['poor'] & self.d_error['decent'], self.pid_output['mediocre']),
-            ctrl.Rule(self.error['poor'] & self.d_error['good'], self.pid_output['poor']),
-            
-            ctrl.Rule(self.error['mediocre'] & self.d_error['poor'], self.pid_output['good']),
-            ctrl.Rule(self.error['mediocre'] & self.d_error['mediocre'], self.pid_output['decent']),
-            ctrl.Rule(self.error['mediocre'] & self.d_error['average'], self.pid_output['average']),
-            ctrl.Rule(self.error['mediocre'] & self.d_error['decent'], self.pid_output['mediocre']),
-            ctrl.Rule(self.error['mediocre'] & self.d_error['good'], self.pid_output['poor']),
-            
-            ctrl.Rule(self.error['average'] & self.d_error['poor'], self.pid_output['decent']),
-            ctrl.Rule(self.error['average'] & self.d_error['mediocre'], self.pid_output['average']),
-            ctrl.Rule(self.error['average'] & self.d_error['average'], self.pid_output['average']),
-            ctrl.Rule(self.error['average'] & self.d_error['decent'], self.pid_output['average']),
-            ctrl.Rule(self.error['average'] & self.d_error['good'], self.pid_output['mediocre']),
-            
-            ctrl.Rule(self.error['decent'] & self.d_error['poor'], self.pid_output['poor']),
-            ctrl.Rule(self.error['decent'] & self.d_error['mediocre'], self.pid_output['mediocre']),
-            ctrl.Rule(self.error['decent'] & self.d_error['average'], self.pid_output['average']),
-            ctrl.Rule(self.error['decent'] & self.d_error['decent'], self.pid_output['decent']),
-            ctrl.Rule(self.error['decent'] & self.d_error['good'], self.pid_output['good']),
-            
-            ctrl.Rule(self.error['good'] & self.d_error['poor'], self.pid_output['poor']),
-            ctrl.Rule(self.error['good'] & self.d_error['mediocre'], self.pid_output['poor']),
-            ctrl.Rule(self.error['good'] & self.d_error['average'], self.pid_output['mediocre']),
-            ctrl.Rule(self.error['good'] & self.d_error['decent'], self.pid_output['decent']),
-            ctrl.Rule(self.error['good'] & self.d_error['good'], self.pid_output['good'])
-        ]
-
-        # 控制系统
-        self.fuzzy_ctrl = ctrl.ControlSystem(self.rules)
-        self.fuzzy_sim = ctrl.ControlSystemSimulation(self.fuzzy_ctrl)
+        # 数据记录
+        self.plot_num = 1000  # 滑动窗口长度
+        self.error_data = deque([0.0]*self.plot_num, maxlen=self.plot_num)
+        self.left_speed_data = deque([0.0]*self.plot_num, maxlen=self.plot_num)
+        self.right_speed_data = deque([0.0]*self.plot_num, maxlen=self.plot_num)
+        # 启动绘图线程
+        self.plot_thread = threading.Thread(target=self.live_plot, daemon=True).start()
 
     def cmd_vel_callback(self, msg:Twist):
         self.target_linear = msg.linear.x
@@ -206,28 +160,33 @@ class ModorNode(Node):
         # self.get_logger().info(f"收到指令: 线速度={self.target_linear}m/s, 角速度={self.target_angular}rad/s")
 
     def imu_callback(self, msg:Imu):
-        self.last_callback_time = time.time()
-
         # # 提取四元数（ROS2的Imu消息中四元数顺序为 x,y,z,w）
         # q = [msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w]
         # # 将四元数转换为欧拉角（Roll, Pitch, Yaw，单位为弧度）
         # # pitch: forward; roll, left-right
         # (roll, pitch, yaw) = tf.euler_from_quaternion(q)
-        # # print(f'Roll1: {roll:.10f}, Pitch1: {pitch:.10f}')
+        # print(f'Roll1: {roll:.10f}, Pitch1: {pitch:.10f}')
 
         # 互补滤波计算角度
-        accel_x, accel_y, accel_z = msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z
-        gyro_x, gyro_y, gyro_z = msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z
-        roll, pitch = self.imu_processor.update([accel_x, accel_y, accel_z], [gyro_x, gyro_y, gyro_z])
+        accel = [msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z]
+        gyro = [msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z]
+        roll, pitch = self.imu_processor.update(accel, gyro)
         # 卡尔曼滤波计算角度
-        roll = self.kf_roll.update(gyro_x, roll)
-        pitch = self.kf_pitch.update(gyro_y, pitch)
-        print(f'Roll2: {roll:.10f}, Pitch2: {pitch:.10f}')
+        # roll = self.kf_roll.update(gyro_x, roll)
+        # pitch = self.kf_pitch.update(gyro_y, pitch)
+        print(f'Pitch2: {pitch:.10f}')
 
-        # 安全保护（角度过大时停止）
-        if (abs(pitch-self.pitch_mid) > 0.25):
-            self.motor.write('v 0 0.0 0.0\nv 1 0.0 0.0\n'.encode())
-            return
+        # # 卡尔曼滤波计算角度
+        # accel = msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z
+        # gyro = msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z
+        # accel_pitch = math.atan2(-accel[0], math.sqrt(accel[1]**2 + accel[2]**2))
+        # pitch = self.kf_pitch.update(gyro[1], accel_pitch)
+        # print(f'Pitch3: {pitch:.10f}')
+
+        # # Raw
+        # accel = msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z
+        # pitch = math.atan2(-accel[0], math.sqrt(accel[1]**2 + accel[2]**2))
+        # print(f'Pitch4: {pitch:.10f}')
 
         if not self.calibration_complete:
             if self.sample_count < self.max_samples:
@@ -240,32 +199,31 @@ class ModorNode(Node):
                 self.target_pitch = (self.pitch_sum / self.max_samples)
                 print(f"校准完成，目标平衡角度：{self.target_pitch:.10f}")
                 self.calibration_complete = True
-            return  # 在校准期间不进行 PID 控制
+            return
 
         left_speed, right_speed = self.balance_compute(pitch)
-        self.set_motor_speeds(left_speed, right_speed, direction=1)
-        self.read_and_publish()
+        print(f'ls: {left_speed:.4f}, rs: {right_speed:.4f}')
+
+        # 安全角度限制
+        if abs(pitch - self.pitch_mid) > 0.30:
+            self.motor.write('v 0 0.0 0.0\nv 1 0.0 0.0\n'.encode())
+        else:
+            self.set_motor_speeds(left_speed, right_speed, direction=0)
+
+        # self.read_and_publish()
 
     def balance_compute(self, pitch):
         # 计算误差和变化率
         current_time = time.time()
         dt = current_time - self.last_time
-        error = self.target_pitch - pitch
-        self.integral += error * dt
+        error = pitch - self.target_pitch
+        self.integral += error * dt  # TODO: 积分限幅
         derivative = (error - self.prev_error) / dt if dt > 0 else 0.0
 
-        if self.fuzzy_enable:
-            # 运行模糊控制器
-            self.fuzzy_sim.input['error'] = error
-            self.fuzzy_sim.input['d_error'] = derivative
-            self.fuzzy_sim.compute()
-            correction = self.fuzzy_sim.output['pid_output']
-            # self.get_logger().info(f'error: {error:.10f}, d_error: {derivative:.10f}')
-        else:
-            # PID 控制计算
-            correction = self.balance_kp * error + self.balance_kd * derivative + self.balance_ki * self.integral
-            print(f'error: {error:.10f}, integral: {self.integral:.10f}, derivative: {derivative:.10f}')
-            # print(f'error: {self.balance_kp * error:.10f}, integral: {self.balance_ki * self.integral:.10f}, derivative: {self.balance_kd * derivative:.10f}')
+        # PID 控制计算
+        correction = self.balance_kp * error + self.balance_kd * derivative + self.balance_ki * self.integral
+        print(f'error: {error:.10f}, derivative: {derivative:.10f}, integral: {self.integral:.10f}')
+        print(f'error: {self.balance_kp * error:.10f}, derivative: {self.balance_kd * derivative:.10f}, integral: {self.balance_ki * self.integral:.10f}')
 
         # 更新状态
         self.prev_error = error
@@ -278,7 +236,48 @@ class ModorNode(Node):
         left_speed = linear_speed - angular_diff - correction
         right_speed = linear_speed + angular_diff + correction
 
+        # 记录日志
+        self.error_data.append(error)
+        self.left_speed_data.append(left_speed)
+        self.right_speed_data.append(right_speed)
+
         return left_speed, right_speed
+
+    # 实时绘图线程
+    def live_plot(self):
+        plt.ion()
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 6))  # 两个子图
+
+        # 第一个子图：PID误差
+        error_line, = ax1.plot(self.error_data, label='Error', color='tab:red')
+        ax1.set_ylabel("Error")
+        ax1.set_title("PID Error")
+        ax1.legend()
+        ax1.grid(True)
+
+        # 第二个子图：左右轮速度
+        left_line, = ax2.plot(self.left_speed_data, label='Left Speed', color='tab:blue')
+        ax2.set_ylabel("Speed")
+        ax2.set_ylim(-2, 2)  # 根据你电机输出的范围设定
+        ax2.set_title("Motor Speeds")
+        ax2.legend()
+        ax2.grid(True)
+
+        while True:
+            error_line.set_ydata(self.error_data)
+            left_line.set_ydata(self.left_speed_data)
+
+            x_range = range(len(self.error_data))
+            error_line.set_xdata(x_range)
+            left_line.set_xdata(x_range)
+
+            ax1.relim()
+            ax1.autoscale_view()
+            ax2.relim()
+            ax2.autoscale_view()
+
+            plt.draw()
+            plt.pause(0.01)
 
     def motor_setup(self):
         while (True):
@@ -474,7 +473,7 @@ class ModorNode(Node):
         try:
             # 根据实际电机方向可能需要调整符号
             setspeed = f'v 0 {left_speed:.4f} 0.0\nv 1 {right_speed:.4f} 0.0\n'
-            print(setspeed)
+            # print(setspeed)
             self.motor.write(setspeed.encode())
         except Exception as e:
             self.get_logger().error(f"Motor control failed: {str(e)}")
@@ -483,7 +482,7 @@ class ModorNode(Node):
         # 限幅处理
         left_angle = max(min(left_angle, self.max_angle), self.min_angle)
         right_angle = max(min(right_angle, self.max_angle), self.min_angle)
-        # 
+        #
         servo0_angle = 90 + right_angle
         servo1_angle = 100 - right_angle
         servo2_angle = 90 - left_angle
