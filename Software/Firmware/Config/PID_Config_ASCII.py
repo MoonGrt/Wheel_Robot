@@ -9,10 +9,10 @@ import matplotlib.pyplot as plt
 from odrive.enums import *
 from PyQt5.QtGui import QIcon
 from serial import Serial
-
+from collections import deque
 
 class PIDConfig(QMainWindow):
-    def __init__(self, port_name="COM5", baudrate=115200):
+    def __init__(self, port_name="COM5", baudrate=512000):
         super().__init__()
         self.motor = None
 
@@ -36,15 +36,15 @@ class PIDConfig(QMainWindow):
         layout.addWidget(self.canvas)
 
         # 记录数据（分别存储位置和速度数据）
-        self.x_pos_data, self.y_pos_data = [], []
-        self.x_vel_data, self.y_vel_data = [], []
-        self.start_time = time.time()
-        self.max_data_points = 500
+        self.plot_num = 1000
+        self.pos_data = deque([0.0]*self.plot_num, maxlen=self.plot_num)
+        self.vel_data = deque([0.0]*self.plot_num, maxlen=self.plot_num)
+        # self.start_time = time.time()
 
         # 记录当前模式
         self.current_mode = "velocity"
         # 记录当前轴
-        self.current_axis = "axis1"
+        self.current_axis = "axis0"
 
         # 创建motor切换
         self.create_motor_selection(layout)
@@ -56,6 +56,9 @@ class PIDConfig(QMainWindow):
         self.create_target_controls(layout)
 
         # 启动绘图线程
+        self.line, = self.ax.plot([], [], 'r-' if self.current_mode == 'position' else 'b-')
+        self.ax.set_xlim(0, self.plot_num)
+        # self.ax.set_ylim(-10, 10)
         self.running = True
         self.plot_thread = threading.Thread(target=self.update_plot, daemon=True)
         self.plot_thread.start()
@@ -227,16 +230,13 @@ class PIDConfig(QMainWindow):
         if self.motor is None:
             return
 
+        self.motor_send_cmd(f'w {self.current_axis}.controller.input_vel 0.0')
+        self.motor_send_cmd(f'w {self.current_axis}.requested_state {AxisState.IDLE}')
+
         if self.mode_axis0.isChecked():
-            self.motor.axis1.controller.input_vel = 0
-            self.motor.axis1.controller.input_pos = 0
-            self.motor.axis1.requested_state = AxisState.IDLE
             self.current_axis = "axis0"
             print("切换到 **axis0**")
         elif self.mode_axis1.isChecked():
-            self.motor.axis0.controller.input_vel = 0
-            self.motor.axis0.controller.input_pos = 0
-            self.motor.axis0.requested_state = AxisState.IDLE
             self.current_axis = "axis1"
             print("切换到 **axis1**")
         self.motor_control_button.setText("Start")
@@ -249,12 +249,12 @@ class PIDConfig(QMainWindow):
             return
 
         if self.mode_position.isChecked():
-            self.motor.axis0.controller.config.control_mode = ControlMode.POSITION_CONTROL  # 位置模式
             self.current_mode = "position"
+            # self.ax.set_ylim(min(self.pos_data) - 1, max(self.pos_data) + 1)
             print("切换到 **位置模式**")
         elif self.mode_velocity.isChecked():
-            self.motor.axis0.controller.config.control_mode = ControlMode.VELOCITY_CONTROL  # 速度模式
             self.current_mode = "velocity"
+            # self.ax.set_ylim(-10, 10)
             print("切换到 **速度模式**")
 
     def create_target_controls(self, layout):
@@ -288,10 +288,10 @@ class PIDConfig(QMainWindow):
             target_value = float(self.target_input.text())
             if self.current_mode == "position":
                 self.motor_send_cmd(f'w {self.current_axis}.controller.input_pos {target_value}')
-                print(f"设置目标 **位置**: {target_value}")
+                print(f"设置目标 {self.current_axis} **位置**: {target_value}")
             elif self.current_mode == "velocity":
                 self.motor_send_cmd(f'w {self.current_axis}.controller.input_vel {target_value}')
-                print(f"设置目标 **速度**: {target_value}")
+                print(f"设置目标 {self.current_axis} **速度**: {target_value}")
         except ValueError:
             print("输入无效，请输入数字！")
 
@@ -326,7 +326,7 @@ class PIDConfig(QMainWindow):
 
         params = [
             ("pos_gain", 0.0, 100.0, pos_gain),
-            ("vel_gain", 0.0, 2.5, vel_gain),
+            ("vel_gain", 0.0, 0.5, vel_gain),
             ("vel_integrator_gain", 0.0, 10.0, vel_integrator_gain),
         ]
 
@@ -367,33 +367,25 @@ class PIDConfig(QMainWindow):
         print(f"更新参数: {param_name} = {value:.2f}")
 
     def update_plot(self):
-        """ 实时更新 Matplotlib 图像 """
+        """ 实时更新 Matplotlib 图像（高效方式） """
         while self.running and self.motor:
-            elapsed_time = time.time() - self.start_time
-
             try:
                 if self.motor_running:
+                    value = float(self.motor_send_cmd(
+                        f'r {self.current_axis}.encoder.pos_estimate' if self.current_mode == "position"
+                        else f'r {self.current_axis}.encoder.vel_estimate'
+                    ))
                     if self.current_mode == "position":
-                        value = float(self.motor_send_cmd(f'r {self.current_axis}.encoder.pos_estimate'))
-                        # print(f"pos: {value:.4f}")
-                        self.x_pos_data.append(elapsed_time)
-                        self.y_pos_data.append(value)
-                        if len(self.x_pos_data) > self.max_data_points:
-                            self.x_pos_data.pop(0)
-                            self.y_pos_data.pop(0)
-                        self.ax.clear()
-                        self.ax.plot(self.x_pos_data, self.y_pos_data, 'r-')
+                        self.pos_data.append(value)
+                        self.line.set_xdata(range(len(self.pos_data)))
+                        self.line.set_ydata(self.pos_data)
                     else:
-                        value = float(self.motor_send_cmd(f'r {self.current_axis}.encoder.vel_estimate'))
-                        # print(f"vel: {value:.4f}")
-                        self.x_vel_data.append(elapsed_time)
-                        self.y_vel_data.append(value)
-                        if len(self.x_vel_data) > self.max_data_points:
-                            self.x_vel_data.pop(0)
-                            self.y_vel_data.pop(0)
-                        self.ax.clear()
-                        self.ax.plot(self.x_vel_data, self.y_vel_data, 'b-')
-                        # self.ax.set_ylim(-5, 5)  # 速度模式固定 Y 轴范围
+                        self.vel_data.append(value)
+                        self.line.set_xdata(range(len(self.vel_data)))
+                        self.line.set_ydata(self.vel_data)
+
+                    self.ax.relim()           # 重新计算坐标轴范围（可选）
+                    self.ax.autoscale_view()  # 自动缩放视图（可选）
                     self.canvas.draw()
             except Exception as e:
                 print(f"{e}")
@@ -402,8 +394,8 @@ class PIDConfig(QMainWindow):
     def motor_idle(self):
         self.motor_send_cmd(f'w axis0.requested_state {AxisState.IDLE}')
         self.motor_send_cmd(f'w axis1.requested_state {AxisState.IDLE}')
-        self.motor_send_cmd('v 0 0.0 0.0')
-        self.motor_send_cmd('v 1 0.0 0.0')
+        self.motor_send_cmd('v 0 0.0')
+        self.motor_send_cmd('v 1 0.0')
 
     def closeEvent(self, event):
         """窗口关闭时，确保 motor 停止"""
