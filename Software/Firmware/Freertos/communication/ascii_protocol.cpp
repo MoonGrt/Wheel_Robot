@@ -137,9 +137,9 @@ void AsciiProtocol::cmd_set_position(char * pStr, bool use_checksum) {
 
     int numscan = sscanf(pStr, "p %u %f %f %f", &motor_number, &pos_setpoint, &vel_feed_forward, &torque_feed_forward);
     if (numscan < 2) {
-        respond(use_checksum, "invalid command format");
+        respond(use_checksum, "err cmd");
     } else if (motor_number >= AXIS_COUNT) {
-        respond(use_checksum, "invalid motor %u", motor_number);
+        respond(use_checksum, "err motor %u", motor_number);
     } else {
         Axis& axis = axes[motor_number];
         axis.controller_.config_.control_mode = Controller::CONTROL_MODE_POSITION_CONTROL;
@@ -163,9 +163,9 @@ void AsciiProtocol::cmd_set_position_wl(char * pStr, bool use_checksum) {
 
     int numscan = sscanf(pStr, "q %u %f %f %f", &motor_number, &pos_setpoint, &vel_limit, &torque_lim);
     if (numscan < 2) {
-        respond(use_checksum, "invalid command format");
+        respond(use_checksum, "err cmd");
     } else if (motor_number >= AXIS_COUNT) {
-        respond(use_checksum, "invalid motor %u", motor_number);
+        respond(use_checksum, "err motor %u", motor_number);
     } else {
         Axis& axis = axes[motor_number];
         axis.controller_.config_.control_mode = Controller::CONTROL_MODE_POSITION_CONTROL;
@@ -188,9 +188,9 @@ void AsciiProtocol::cmd_set_velocity(char * pStr, bool use_checksum) {
     float vel_setpoint, torque_feed_forward;
     int numscan = sscanf(pStr, "v %u %f %f", &motor_number, &vel_setpoint, &torque_feed_forward);
     if (numscan < 2) {
-        respond(use_checksum, "invalid command format");
+        respond(use_checksum, "err cmd");
     } else if (motor_number >= AXIS_COUNT) {
-        respond(use_checksum, "invalid motor %u", motor_number);
+        respond(use_checksum, "err motor %u", motor_number);
     } else {
         Axis& axis = axes[motor_number];
         axis.controller_.config_.control_mode = Controller::CONTROL_MODE_VELOCITY_CONTROL;
@@ -210,9 +210,9 @@ void AsciiProtocol::cmd_set_torque(char * pStr, bool use_checksum) {
     float torque_setpoint;
 
     if (sscanf(pStr, "c %u %f", &motor_number, &torque_setpoint) < 2) {
-        respond(use_checksum, "invalid command format");
+        respond(use_checksum, "err cmd");
     } else if (motor_number >= AXIS_COUNT) {
-        respond(use_checksum, "invalid motor %u", motor_number);
+        respond(use_checksum, "err motor %u", motor_number);
     } else {
         Axis& axis = axes[motor_number];
         axis.controller_.config_.control_mode = Controller::CONTROL_MODE_TORQUE_CONTROL;
@@ -239,7 +239,7 @@ void AsciiProtocol::cmd_set_servo_motor(char * pStr, bool use_checksum) {
                          &servo_number[3], &servo_angle[3]);
 
     if (numscan < 2 || numscan % 2 != 0) {
-        respond(use_checksum, "invalid servo input format");
+        respond(use_checksum, "err cmd");
         return;
     }
 
@@ -247,7 +247,7 @@ void AsciiProtocol::cmd_set_servo_motor(char * pStr, bool use_checksum) {
 
     for (int i = 0; i < num_pairs; i++) {
         if (servo_number[i] >= SERVOS_COUNT) {
-            respond(use_checksum, "invalid servo number %u", servo_number[i]);
+            respond(use_checksum, "err servo number %u", servo_number[i]);
             return;
         }
 
@@ -270,9 +270,9 @@ void AsciiProtocol::cmd_encoder(char * pStr, bool use_checksum) {
         int encoder_count;
 
         if (sscanf(pStr, "l %u %i", &motor_number, &encoder_count) < 2) {
-            respond(use_checksum, "invalid command format");
+            respond(use_checksum, "err cmd");
         } else if (motor_number >= AXIS_COUNT) {
-            respond(use_checksum, "invalid motor %u", motor_number);
+            respond(use_checksum, "err motor %u", motor_number);
         } else {
             Axis& axis = axes[motor_number];
             axis.encoder_.set_linear_count(encoder_count);
@@ -280,7 +280,7 @@ void AsciiProtocol::cmd_encoder(char * pStr, bool use_checksum) {
             respond(use_checksum, "encoder set to %u", encoder_count);
         }
     } else {
-        respond(use_checksum, "invalid command format");
+        respond(use_checksum, "err cmd");
     }
 }
 
@@ -293,9 +293,9 @@ void AsciiProtocol::cmd_set_trapezoid_trajectory(char* pStr, bool use_checksum) 
     float goal_point;
 
     if (sscanf(pStr, "t %u %f", &motor_number, &goal_point) < 2) {
-        respond(use_checksum, "invalid command format");
+        respond(use_checksum, "err cmd");
     } else if (motor_number >= AXIS_COUNT) {
-        respond(use_checksum, "invalid motor %u", motor_number);
+        respond(use_checksum, "err motor %u", motor_number);
     } else {
         Axis& axis = axes[motor_number];
         axis.controller_.config_.input_mode = Controller::INPUT_MODE_TRAP_TRAJ;
@@ -314,9 +314,9 @@ void AsciiProtocol::cmd_get_feedback(char * pStr, bool use_checksum) {
     unsigned motor_number;
 
     if (sscanf(pStr, "f %u", &motor_number) < 1) {
-        respond(use_checksum, "invalid command format");
+        respond(use_checksum, "err cmd");
     } else if (motor_number >= AXIS_COUNT) {
-        respond(use_checksum, "invalid motor %u", motor_number);
+        respond(use_checksum, "err motor %u", motor_number);
     } else {
         Axis& axis = axes[motor_number];
         respond(use_checksum, "%f %f",
@@ -384,24 +384,24 @@ void AsciiProtocol::cmd_read_property(char * pStr, bool use_checksum) {
     char name[MAX_LINE_LENGTH];
 
     if (sscanf(pStr, "r %255s", name) < 1) {
-        respond(use_checksum, "invalid command format");
+        respond(use_checksum, "err cmd");
     } else if (strcmp(name, "p") == 0) {
-        respond(use_checksum, "%f %f",
+        respond(use_checksum, "%.4f %.4f",
             (double)axes[0].encoder_.pos_estimate_.any().value_or(0.0f),
             (double)axes[1].encoder_.pos_estimate_.any().value_or(0.0f));
     } else if (strcmp(name, "v") == 0) {
-        respond(use_checksum, "%f %f",
+        respond(use_checksum, "%.4f %.4f",
             (double)axes[0].encoder_.vel_estimate_.any().value_or(0.0f),
             (double)axes[1].encoder_.vel_estimate_.any().value_or(0.0f));
     } else {
         Introspectable property = root_obj.get_child(name, sizeof(name));
         const StringConvertibleTypeInfo* type_info = dynamic_cast<const StringConvertibleTypeInfo*>(property.get_type_info());
         if (!type_info) {
-            respond(use_checksum, "invalid property");
+            respond(use_checksum, "err property");
         } else {
             char response[10];
             bool success = type_info->get_string(property, response, sizeof(response));
-            respond(use_checksum, success ? response : "not implemented");
+            respond(use_checksum, success ? response : "not impl");
         }
     }
 }
@@ -415,16 +415,16 @@ void AsciiProtocol::cmd_write_property(char * pStr, bool use_checksum) {
     char value[MAX_LINE_LENGTH];
 
     if (sscanf(pStr, "w %255s %255s", name, value) < 1) {
-        respond(use_checksum, "invalid command format");
+        respond(use_checksum, "err cmd");
     } else {
         Introspectable property = root_obj.get_child(name, sizeof(name));
         const StringConvertibleTypeInfo* type_info = dynamic_cast<const StringConvertibleTypeInfo*>(property.get_type_info());
         if (!type_info) {
-            respond(use_checksum, "invalid property");
+            respond(use_checksum, "err property");
         } else {
             bool success = type_info->set_string(property, value, sizeof(value));
             if (!success) {
-                respond(use_checksum, "not implemented");
+                respond(use_checksum, "not impl");
             }
         }
     }
@@ -438,9 +438,9 @@ void AsciiProtocol::cmd_update_axis_wdg(char * pStr, bool use_checksum) {
     unsigned motor_number;
 
     if (sscanf(pStr, "u %u", &motor_number) < 1) {
-        respond(use_checksum, "invalid command format");
+        respond(use_checksum, "err cmd");
     } else if (motor_number >= AXIS_COUNT) {
-        respond(use_checksum, "invalid motor %u", motor_number);
+        respond(use_checksum, "err motor %u", motor_number);
     } else {
         axes[motor_number].watchdog_feed();
     }
@@ -452,7 +452,7 @@ void AsciiProtocol::cmd_update_axis_wdg(char * pStr, bool use_checksum) {
 // @param use_checksum bool to indicate whether a checksum is required on response
 void AsciiProtocol::cmd_unknown(char * pStr, bool use_checksum) {
     (void)pStr;
-    respond(use_checksum, "unknown command");
+    respond(use_checksum, "err cmd");
 }
 
 void AsciiProtocol::on_read_finished(ReadResult result) {

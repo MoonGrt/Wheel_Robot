@@ -103,6 +103,9 @@
         "cmsis_armcc.h": "c",
         "freertos.h": "c",
         "timers.h": "c",
-        "stack_macros.h": "c"
+        "stack_macros.h": "c",
+        "spi.h": "c",
+        "i2c.h": "c",
+        "stm32f4xx_hal_def.h": "c"
     }
 }
