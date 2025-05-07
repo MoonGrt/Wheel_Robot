@@ -1,14 +1,12 @@
 import rclpy, math, time, threading, sys
 import numpy as np
 import tf_transformations as tf
-import matplotlib.pyplot as plt
 from collections import deque
 from serial import Serial
 from rclpy.node import Node
-from sensor_msgs.msg import Imu
 from tf2_ros import TransformBroadcaster
 from nav_msgs.msg import Odometry
-from sensor_msgs.msg import JointState
+from sensor_msgs.msg import JointState, Imu
 from geometry_msgs.msg import Twist, Point, Quaternion, TransformStamped
 from odrive.enums import *
 
@@ -61,24 +59,20 @@ class KalmanFilter:
 class IMUProcessor:
     def __init__(self):
         self.alpha = 0.98  # 互补滤波系数
-        self.dt = 0.005  # 采样周期
         self.roll = 0.0
         self.pitch = 0.0
 
-    def update(self, accel, gyro):
+    def update(self, accel, gyro, dt):
         # 加速度计计算角度（适用于低频、长期稳定）
-        accel_roll = math.atan2(accel[1], accel[2])
+        # accel_roll = math.atan2(accel[1], accel[2])
         accel_pitch = math.atan2(-accel[0], math.sqrt(accel[1]**2 + accel[2]**2))
-
         # 陀螺仪积分计算角度（短期稳定，易漂移）
-        gyro_roll = self.roll + gyro[0] * self.dt
-        gyro_pitch = self.pitch + gyro[1] * self.dt
-
+        # gyro_roll = self.roll + gyro[0] * dt
+        gyro_pitch = self.pitch + gyro[1] * dt
         # 互补滤波
-        self.roll = self.alpha * gyro_roll + (1 - self.alpha) * accel_roll
+        # self.roll = self.alpha * gyro_roll + (1 - self.alpha) * accel_roll
         self.pitch = self.alpha * gyro_pitch + (1 - self.alpha) * accel_pitch
-
-        return self.roll, self.pitch
+        return self.pitch
 
 
 class ModorNode(Node):
@@ -86,74 +80,70 @@ class ModorNode(Node):
         super().__init__('motor_node')
         self.motor = None
 
-        # 机器人物理参数
-        self.x = 0.0
-        self.y = 0.0
-
         # 上次回调时间
-        self.last_time = time.time()
+        self.last_time_pid = time.time()
+        self.last_time_imu_callback = time.time()
 
         # PID参数
         self.speed_kp, self.speed_ki, self.speed_kd = 0.0, 0.0, 0.0
-        self.angle_kp, self.angle_ki, self.angle_kd = 20.0, 0.0, 0.1
-        self.angular_kp, self.angular_ki, self.angular_kd = 0.8, 0.0, 0.0
+        self.angle_kp, self.angle_ki, self.angle_kd = 25, 0.0, 0.2
+        self.angular_kp, self.angular_ki, self.angular_kd = 1, 0.0, 0.0
 
         # 状态变量
         self.speed_integral = 0
         self.angle_integral = 0
         self.angular_integral = 0
-
         self.prev_speed_error = 0
         self.prev_angle_error = 0
         self.prev_angular_error = 0
 
         # 来自轮速传感器的速度估计
-        self.prev_motor_pos0 = 0
-        self.prev_motor_pos1 = 0
-        self.prev_motor_vel0 = 0
-        self.prev_motor_vel1 = 0
         self.motor_pos0 = 0
         self.motor_pos1 = 0
         self.motor_vel0 = 0
         self.motor_vel1 = 0
+        self.motor_pos0_filter = 0
+        self.motor_pos1_filter = 0
         self.motor_vel0_filter = 0
         self.motor_vel1_filter = 0
-
-        self.gyro_pitch_rate_filter = 0
 
         # 目标角度
         self.target_roll = 0
         self.target_pitch = 0
-        # 误差项
-        self.prev_error = 0.0
-        self.integral = 0.0
         # 运动参数
         self.target_linear = 0.0
         self.target_angular = 0.0
+        # 机器人物理参数
+        self.x = 0.0
+        self.y = 0.0
         self.wheel_base = 0.174    # 车轮间距 (meters)
         self.wheel_radius = 0.026  # 轮子半径 (meters)
 
-        self.pitch_max = 0.380
-        self.pitch_min = -0.483
+        self.pitch_max = 0.4048
+        self.pitch_min = -0.5031
         self.pitch_mid = (self.pitch_max + self.pitch_min) / 2
-        self.max_speed = 8.0  # 电机最大转速 (rad/s)
-        self.max_angle = 90.0  #
-        self.min_angle = 0.0  #
+        self.max_speed = 15.0  # 电机最大转速 (rad/s)
+        self.max_angle = 90.0
+        self.min_angle = 0.0
 
-        self.max_samples = 1000  # calibate 时采样 1000 次
+        # calibration
+        self.max_samples = 200  # calibate 时采样 200 次
         self.pitch_sum = 0
         self.sample_count = 0
         self.calibration_complete = True
 
+        self.init(port_name, baudrate)
+
+    def init(self, port_name, baudrate):
         self.motor_run = False
         self.imu_processor = IMUProcessor()
-        self.kf_roll = KalmanFilter()
         self.kf_pitch = KalmanFilter()
 
         # 连接 Motor
         try:
             self.motor = Serial(port=port_name, baudrate=baudrate, timeout=0.1)
-            self.set_servo_angle(15, 15)
+            self.serial_lock = threading.Lock()
+            self.set_servo_angle(25, 25)
             self.get_logger().info("\033[32mMotor serial port connection established...\033[0m")
             self.motor_setup()
             self.get_logger().info("\033[32mMotor Setup Successed...\033[0m")
@@ -172,11 +162,16 @@ class ModorNode(Node):
         self.joint_pub = self.create_publisher(JointState, 'joint_states', 10)
 
         # 初始化订阅
+        self.accel = [0, 0, 0]
+        self.gyro = [0, 0, 0]
+        self.roll = 0
+        self.pitch = 0
+        self.gyro_y_filter = 0
         self.imu_sub = self.create_subscription(Imu, 'imu', self.imu_callback, 10)
         self.cmd_vel_sub = self.create_subscription(Twist, 'cmd_vel', self.cmd_vel_callback, 10)
 
         # 数据记录
-        self.plot_num = 500
+        self.plot_num = 200
         self.speed_error_data = deque([0.0]*self.plot_num, maxlen=self.plot_num)
         self.speed_output_data = deque([0.0]*self.plot_num, maxlen=self.plot_num)
         self.angle_error_data = deque([0.0]*self.plot_num, maxlen=self.plot_num)
@@ -188,208 +183,143 @@ class ModorNode(Node):
         self.data3 = deque([0.0]*self.plot_num, maxlen=self.plot_num)
         self.data4 = deque([0.0]*self.plot_num, maxlen=self.plot_num)
 
+        # 初始化线程 不能使用定时器(单线程的ROS executor阻塞执行，导致函数的执行时间影响其他callback)
+        self.pid_thread_runing = True
+        self.pid_thread = threading.Thread(target=self.cascaded_pid_control, daemon=True)
+        self.pid_thread.start()
+
     def cmd_vel_callback(self, msg:Twist):
         self.target_linear = msg.linear.x
         self.target_angular = msg.angular.z
         # self.get_logger().info(f"收到指令: 线速度={self.target_linear}m/s, 角速度={self.target_angular}rad/s")
 
     def imu_callback(self, msg:Imu):
-        # # 提取四元数（ROS2的Imu消息中四元数顺序为 x,y,z,w）
-        # q = [msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w]
-        # # 将四元数转换为欧拉角（Roll, Pitch, Yaw，单位为弧度）
-        # # pitch: forward; roll, left-right
-        # (roll, pitch, yaw) = tf.euler_from_quaternion(q)
-        # print(f'Roll1: {roll:.10f}, Pitch1: {pitch:.10f}')
+        current_time = time.time()
+        dt = current_time - self.last_time_imu_callback
+        dt = max(dt, 1e-6)
+        self.last_time_imu_callback = current_time
 
         # 互补滤波计算角度
-        accel = [msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z]
-        gyro = [msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z]
-        roll, pitch = self.imu_processor.update(accel, gyro)
-        # 卡尔曼滤波计算角度
-        # roll = self.kf_roll.update(gyro[0], roll)
-        # pitch = self.kf_pitch.update(gyro[1], pitch)
-        # print(f'Pitch2: {pitch:.10f}')
-
+        self.accel = [msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z]
+        self.gyro = [msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z]
+        self.pitch = self.imu_processor.update(self.accel, self.gyro, dt)
         # # 卡尔曼滤波计算角度
-        # accel = msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z
-        # gyro = msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z
-        # accel_pitch = math.atan2(-accel[0], math.sqrt(accel[1]**2 + accel[2]**2))
-        # pitch = self.kf_pitch.update(gyro[1], accel_pitch)
-        # print(f'Pitch3: {pitch:.10f}')
-
-        # # Raw
-        # accel = msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z
-        # pitch = math.atan2(-accel[0], math.sqrt(accel[1]**2 + accel[2]**2))
-        # print(f'Pitch4: {pitch:.10f}')
+        # self.pitch = self.kf_pitch.update(self.gyro[1], self.pitch)
 
         if not self.calibration_complete:
+            if self.sample_count == 0:
+                self.motor_send_cmd(f'w axis0.requested_state {AxisState.IDLE}')
+                self.motor_send_cmd(f'w axis1.requested_state {AxisState.IDLE}')
+                print('IDLE')
+            elif self.sample_count == self.max_samples:
+                self.motor_send_cmd(f'w axis0.requested_state {AxisState.CLOSED_LOOP_CONTROL}')
+                self.motor_send_cmd(f'w axis1.requested_state {AxisState.CLOSED_LOOP_CONTROL}')
+                print('LOOP')
             if self.sample_count < self.max_samples:
                 if self.sample_count == 0:
                     print("校准中... 请保持平衡车在平衡状态，正在采样...")
                 self.sample_count += 1
-                self.pitch_sum += pitch
-                print(pitch)
+                self.pitch_sum += self.pitch
+                print(self.pitch)
             else:
                 self.target_pitch = (self.pitch_sum / self.max_samples)
-                print(f"校准完成，目标平衡角度：{self.target_pitch:.10f}")
+                print(f"校准完成，目标平衡角度：{self.target_pitch:.5f}")
                 self.calibration_complete = True
-            return
+                self.sample_count = 0
+                self.pitch_sum = 0
 
-        self.read_motor()
-        # self.publish_msg()
+        # print(f'dt: {dt:.5f}')
+        # print(f'pitch: {self.pitch:.5f}')
+        self.data3.append(self.pitch)
+        # self.data4.append()
 
-        # left_speed, right_speed = self.balance_compute(pitch)
-        left_speed, right_speed = self.cascaded_pid_control(pitch, gyro[1])
-        # print(f'ls: {left_speed:.4f}, rs: {right_speed:.4f}')
+    def cascaded_pid_control(self):
+        time.sleep(1.5)
+        while self.pid_thread_runing:
+            self.read_motor()
+            self.publish_msg()
 
-        # 
-        if abs(pitch - self.pitch_mid) > 0.30 or not self.motor_run:
-            self.motor.write('v 0 0.0 0.0\nv 1 0.0 0.0\n'.encode())
-        else:
-            self.set_motor_speeds(left_speed, right_speed, direction=1)
+            current_time = time.time()
+            dt = current_time - self.last_time_pid
+            dt = max(dt, 1e-6)  # 防止除以0
+            self.last_time_pid = current_time
 
+            self.motor_vel0_filter = 0.3 * self.motor_vel0 + 0.7 * self.motor_vel0_filter
+            self.motor_vel1_filter = 0.3 * self.motor_vel1 + 0.7 * self.motor_vel1_filter
+            left_speed = self.motor_vel0_filter
+            right_speed = self.motor_vel1_filter
+            # left_speed = (self.motor_pos0 - self.motor_pos0_filter) / dt
+            # right_speed = (self.motor_pos1 - self.motor_pos1_filter) / dt
+            # self.motor_pos0_filter = self.motor_pos0 * 0.3 + self.motor_pos0_filter * 0.7
+            # self.motor_pos1_filter = self.motor_pos1 * 0.3 + self.motor_pos1_filter * 0.7
 
-    # def balance_compute(self, pitch):
-    #     # 计算误差和变化率
-    #     current_time = time.time()
-    #     dt = current_time - self.last_time
-    #     error = pitch - self.target_pitch
-    #     self.integral += error * dt  # TODO: 积分限幅
-    #     derivative = (error - self.prev_error) / dt if dt > 0 else 0.0
+            # self.data1.append(self.motor_pos0)
+            self.data2.append(right_speed)
 
-    #     # PID 控制计算
-    #     correction = self.balance_kp * error + self.balance_kd * derivative + self.balance_ki * self.integral
-    #     print(f'error: {error:.10f}, derivative: {derivative:.10f}, integral: {self.integral:.10f}')
-    #     print(f'error: {self.balance_kp * error:.10f}, derivative: {self.balance_kd * derivative:.10f}, integral: {self.balance_ki * self.integral:.10f}')
+            # 当前车速(机器人线速度)：左右轮速度平均 (未转换为车轮实际线速度)
+            current_linear_speed = (self.motor_vel0 + self.motor_vel1) / 2.0
+            current_angular_speed = (self.motor_vel1 - self.motor_vel0) / self.wheel_base
 
-    #     # 更新状态
-    #     self.prev_error = error
-    #     self.last_time = current_time
+            self.gyro_y_filter = 0.3 * self.gyro[1] + 0.7 * self.gyro_y_filter  # TODO
 
-    #     # 运动学转换
-    #     linear_speed = self.target_linear / self.wheel_radius  # 转换为电机角速度
-    #     angular_diff = (self.target_angular * self.wheel_base) / (2 * self.wheel_radius)
-    #     # 计算左右轮速度
-    #     left_speed = linear_speed - angular_diff - correction
-    #     right_speed = linear_speed + angular_diff + correction
+            # ========== 1. 速度环 PID ==========
+            speed_error = current_linear_speed - self.target_linear  # 当前速度可由轮速传感器提供
+            self.speed_integral += speed_error * dt
+            speed_derivative = ((speed_error - self.prev_speed_error) / dt)
+            speed_output = (
+                self.speed_kp * speed_error +
+                self.speed_ki * self.speed_integral +
+                self.speed_kd * speed_derivative
+            )
+            self.prev_speed_error = speed_error
+            desired_pitch = self.target_pitch + speed_output  # 外环输出为期望角度
 
-    #     # 记录日志
-    #     self.angle_error_data.append(error)
-    #     self.angle_output_data.append(correction)
+            # ========== 2. 角度环 PID ==========
+            angle_error = self.pitch - desired_pitch
+            self.angle_integral += angle_error * dt
+            angle_derivative = ((angle_error - self.prev_angle_error) / dt)
+            angle_output = (
+                self.angle_kp * angle_error +
+                self.angle_ki * self.angle_integral +
+                self.angle_kd * angle_derivative
+            )
+            self.prev_angle_error = angle_error
+            desired_angular_velocity = angle_output  # 输出为期望角速度
+            # print(f'angle_error: {angle_error:.5f}, derivative: {angle_derivative:.5f}, angle_integral: {self.angle_integral:.5f}')
+            # print(f'error: {self.balance_kp * error:.5f}, derivative: {self.balance_kd * derivative:.5f}, integral: {self.balance_ki * self.integral:.5f}')
 
-    #     return left_speed, right_speed
+            # ========== 3. 角速度环 PID ==========
+            angular_error = 0 - desired_angular_velocity
+            self.angular_integral += angular_error * dt
+            angular_derivative = ((angular_error - self.prev_angular_error) / dt)
+            angular_output = (
+                self.angular_kp * angular_error +
+                self.angular_ki * self.angular_integral +
+                self.angular_kd * angular_derivative
+            )
+            self.prev_angular_error = angular_error
 
-    def cascaded_pid_control(self, pitch, gyro_pitch_rate):
-        current_time = time.time()
-        dt = current_time - self.last_time
-        dt = max(dt, 1e-3)  # 防止除以0
-        print(f'dr: {dt:.10f}')
+            # ========== 电机速度合成 ==========
+            linear_speed = self.target_linear  # 线速度: 未转换为车轮目标线速度
+            angular_diff = (self.target_angular * self.wheel_base) / 2  # 角速度差分: 未转换为车轮目标线速度
+            left_speed = (linear_speed - angular_diff) - angular_output
+            right_speed = (linear_speed + angular_diff) + angular_output
 
-        # left_speed = self.motor_vel0
-        # right_speed = self.motor_vel1
-        # self.motor_vel0_filter = 0.3 * self.motor_vel0 + 0.7 * self.motor_vel0_filter
-        # self.motor_vel1_filter = 0.3 * self.motor_vel1 + 0.7 * self.motor_vel1_filter
-        left_speed = (self.motor_pos0 - self.prev_motor_pos0) / dt
-        right_speed = (self.motor_pos1 - self.prev_motor_pos1) / dt
-        self.prev_motor_pos0 = self.motor_pos0 * 0.3 + self.prev_motor_pos0 * 0.7
-        self.prev_motor_pos1 = self.motor_pos1 * 0.3 + self.prev_motor_pos1 * 0.7
+            # print(f'dt: {dt:.5f}, pitch: {self.pitch:.5f}, error: {angle_error:.5f}')
+            # print(f'ls: {left_speed:.4f}, rs: {right_speed:.4f}')
+            if not self.motor_run or not self.calibration_complete or abs(angle_error) > 0.30:
+                self.motor.write('v 0 0.0\nv 1 0.0\n'.encode())
+            else:
+                self.set_motor_speeds(left_speed, right_speed, direction=1)
 
-        self.data1.append(self.motor_pos0)
-        self.data2.append(self.motor_pos1)
-        self.data3.append(left_speed)
-        self.data4.append(right_speed)
-
-        # 当前车速(机器人线速度)：左右轮速度平均 (未转换为车轮实际线速度)
-        current_linear_speed = (self.motor_vel0 + self.motor_vel1) / 2.0
-        current_angular_speed = (self.motor_vel1 - self.motor_vel0) / self.wheel_base
-
-        self.gyro_pitch_rate_filter = 0.3 * gyro_pitch_rate + 0.7 * self.gyro_pitch_rate_filter
-
-        # ========== 1. 速度环 PID ==========
-        speed_error = current_linear_speed - self.target_linear  # 当前速度可由轮速传感器提供
-        self.speed_integral += speed_error * dt
-        speed_output = (
-            self.speed_kp * speed_error +
-            self.speed_ki * self.speed_integral +
-            self.speed_kd * ((speed_error - self.prev_speed_error) / dt)
-        )
-        self.prev_speed_error = speed_error
-        desired_pitch = self.target_pitch + speed_output  # 外环输出为期望角度
-
-        # ========== 2. 角度环 PID ==========
-        angle_error = pitch - desired_pitch
-        self.angle_integral += angle_error * dt
-        angle_output = (
-            self.angle_kp * angle_error +
-            self.angle_ki * self.angle_integral +
-            self.angle_kd * ((angle_error - self.prev_angle_error) / dt)
-        )
-        self.prev_angle_error = angle_error
-        desired_angular_velocity = angle_output  # 输出为期望角速度
-
-        # ========== 3. 角速度环 PID ==========
-        angular_error = self.gyro_pitch_rate_filter - desired_angular_velocity
-        self.angular_integral += angular_error * dt
-        angular_output = (
-            self.angular_kp * angular_error +
-            self.angular_ki * self.angular_integral +
-            self.angular_kd * ((angular_error - self.prev_angular_error) / dt)
-        )
-        self.prev_angular_error = angular_error
-
-        # ========== 电机速度合成 ==========
-        linear_speed = self.target_linear  # 线速度: 未转换为车轮目标线速度
-        angular_diff = (self.target_angular * self.wheel_base) / 2  # 角速度差分: 未转换为车轮目标线速度
-        left_speed = (linear_speed - angular_diff) - angular_output
-        right_speed = (linear_speed + angular_diff) + angular_output
-
-        self.last_time = current_time
-
-        # 记录日志
-        self.speed_error_data.append(speed_error)
-        self.speed_output_data.append(speed_output)
-        self.angle_error_data.append(angle_error)
-        self.angle_output_data.append(angle_output)
-        self.angular_error_data.append(angular_error)
-        self.angular_output_data.append(angular_output)
-
-        return left_speed, right_speed
-
-    # 实时绘图线程
-    def live_plot(self):
-        plt.ion()
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 6))  # 两个子图
-
-        # 第一个子图：PID误差
-        error_line, = ax1.plot(self.error_data, label='Error', color='tab:red')
-        ax1.set_ylabel("Error")
-        ax1.set_title("PID Error")
-        ax1.legend()
-        ax1.grid(True)
-
-        # 第二个子图：左右轮速度
-        left_line, = ax2.plot(self.speed_data, label='Speed', color='tab:blue')
-        ax2.set_ylabel("Speed")
-        ax2.set_ylim(-2, 2)  # 根据你电机输出的范围设定
-        ax2.set_title("Motor Speeds")
-        ax2.legend()
-        ax2.grid(True)
-
-        while True:
-            error_line.set_ydata(self.error_data)
-            left_line.set_ydata(self.speed_data)
-
-            x_range = range(len(self.error_data))
-            error_line.set_xdata(x_range)
-            left_line.set_xdata(x_range)
-
-            ax1.relim()
-            ax1.autoscale_view()
-            ax2.relim()
-            ax2.autoscale_view()
-
-            plt.draw()
-            plt.pause(0.01)
+            # 记录日志
+            self.speed_error_data.append(speed_error)
+            self.speed_output_data.append(speed_output)
+            self.angle_error_data.append(angle_error)
+            self.angle_output_data.append(angle_output)
+            self.angular_error_data.append(angular_error)
+            self.angular_output_data.append(angular_output)
+            self.data1.append(angle_output)
 
     def motor_setup(self):
         while (True):
@@ -407,12 +337,26 @@ class ModorNode(Node):
                         break
                     time.sleep(0.1)
             else:
+                self.motor_send_cmd(f'w axis0.requested_state {AxisState.IDLE}')
+                self.motor_send_cmd(f'w axis1.requested_state {AxisState.IDLE}')
                 break
 
-    def motor_send_cmd(self, cmd):
-        if self.motor:
-            self.motor.write((cmd + '\n').encode())
-            return self.motor.readline().decode().strip()
+    def motor_send_cmd(self, cmd: str):
+        # 在写操作前后上锁
+        with self.serial_lock:
+            # 底层写串口
+            if self.motor:
+                try:
+                    self.motor.write((cmd + '\n').encode())
+                    return self.motor.readline().decode().strip()
+                except:
+                    print('motor cmd send failed')
+
+    def motor_loop(self):
+        self.motor_send_cmd(f'w axis0.requested_state {AxisState.CLOSED_LOOP_CONTROL}')
+        self.motor_send_cmd(f'w axis1.requested_state {AxisState.CLOSED_LOOP_CONTROL}')
+        self.motor_send_cmd('v 0 0.0 0.0')
+        self.motor_send_cmd('v 1 0.0 0.0')
 
     def motor_idle(self):
         self.motor_send_cmd(f'w axis0.requested_state {AxisState.IDLE}')
@@ -513,11 +457,14 @@ class ModorNode(Node):
     def read_motor(self):
         # 读取数据
         try:
-            self.motor_pos0, self.motor_pos1 = map(float, self.motor_send_cmd('r p').split())
-            self.motor_vel0, self.motor_vel1 = map(float, self.motor_send_cmd('r v').split())
-            # print(f"pos0={-self.motor_pos0}, vel0={-self.motor_vel0}, pos1={self.motor_pos1}, vel1={self.motor_vel1}")
+            pos = self.motor_send_cmd('r p')
+            vel = self.motor_send_cmd('r v')
+            if pos and vel:
+                self.motor_pos0, self.motor_pos1 = map(float, pos.split())
+                self.motor_vel0, self.motor_vel1 = map(float, vel.split())
+                # print(f"pos0={-self.motor_pos0}, vel0={-self.motor_vel0}, pos1={self.motor_pos1}, vel1={self.motor_vel1}")
         except ValueError:
-            self.get_logger().warn('Invalid data format')
+            print('Invalid data format')
 
     def publish_msg(self):
         # 计算机器人位置和姿态
@@ -574,8 +521,6 @@ class ModorNode(Node):
         joint_msg.velocity = [-self.motor_vel0, self.motor_vel1]  # 轮子速度
         self.joint_pub.publish(joint_msg)
 
-        # self.get_logger().info(f"x: {self.x:.10f}, y: {self.y:.10f}, theta: {self.theta:.10f}")
-
     def set_motor_speeds(self, left_speed, right_speed, direction=0):
         # 限幅处理
         left_speed = max(min(left_speed, self.max_speed), -self.max_speed)
@@ -585,8 +530,7 @@ class ModorNode(Node):
             right_speed = -right_speed
         try:
             # 根据实际电机方向可能需要调整符号
-            setspeed = f'v 0 {left_speed:.4f} 0.0\nv 1 {right_speed:.4f} 0.0\n'
-            # print(setspeed)
+            setspeed = f'v 0 {left_speed:.4f}\nv 1 {right_speed:.4f}\n'
             self.motor.write(setspeed.encode())
         except Exception as e:
             self.get_logger().error(f"Motor control failed: {str(e)}")
@@ -595,7 +539,7 @@ class ModorNode(Node):
         # 限幅处理
         left_angle = max(min(left_angle, self.max_angle), self.min_angle)
         right_angle = max(min(right_angle, self.max_angle), self.min_angle)
-        #
+        # 角度转换
         servo0_angle = 90 + right_angle
         servo1_angle = 100 - right_angle
         servo2_angle = 90 - left_angle
@@ -623,8 +567,20 @@ class MplCanvas(FigureCanvas):
         if update_ylim:
             self.ax.set_ylim(min(data) - 1, max(data) + 1)
         self.ax.set_xlim(0, len(data))
-        self.draw()
 
+        # 清除旧的文本（如果有的话）
+        if hasattr(self, 'value_text'):
+            self.value_text.remove()
+        # 显示最新数据点的值
+        if data:
+            latest_x = len(data) - 1
+            latest_y = data[-1]
+            self.value_text = self.ax.text(
+                latest_x, latest_y, f' {latest_y:.4f}',
+                fontsize=10, color='red', ha='left', va='bottom'
+            )
+
+        self.draw()
 
 class ControlGUI(QWidget):
     def __init__(self):
@@ -634,7 +590,7 @@ class ControlGUI(QWidget):
 
         # ROS Node
         rclpy.init()
-        self.node = ModorNode("/dev/motor", 115200)
+        self.node = ModorNode("/dev/motor", 512000)
 
         # 初始化ui
         self.init_ui()
@@ -679,7 +635,7 @@ class ControlGUI(QWidget):
             ("Angle", [
                 ("Kp", self.node.angle_kp, 0.0, 50.0),
                 ("Ki", self.node.angle_ki, 0.0, 5.0),
-                ("Kd", self.node.angle_kd, 0.0, 5.0),
+                ("Kd", self.node.angle_kd, -1.5, 1.5),
             ]),
             ("Angular", [
                 ("Kp", self.node.angular_kp, 0.0, 10.0),
@@ -761,11 +717,11 @@ class ControlGUI(QWidget):
         self.speed_error_canvas = MplCanvas(title="Error")
         self.speed_output_canvas = MplCanvas(title="Output")
         self.angle_error_canvas = MplCanvas(title="Error", y_min=-0.5, y_max=0.5)
-        self.angle_output_canvas = MplCanvas(title="Output")
+        self.angle_output_canvas = MplCanvas(title="Output", y_min=-15, y_max=15)
         self.angular_error_canvas = MplCanvas(title="Error")
         self.angular_output_canvas = MplCanvas(title="Output")
-        self.data1_canvas = MplCanvas(title="", )
-        self.data2_canvas = MplCanvas(title="", )
+        self.data1_canvas = MplCanvas(title="")
+        self.data2_canvas = MplCanvas(title="")
         self.data3_canvas = MplCanvas(title="")
         self.data4_canvas = MplCanvas(title="")
 
@@ -833,13 +789,13 @@ class ControlGUI(QWidget):
             # self.speed_output_canvas.update_plot(list(self.node.speed_output_data))
             self.angle_error_canvas.update_plot(list(self.node.angle_error_data))
             self.angle_output_canvas.update_plot(list(self.node.angle_output_data))
-            self.angular_error_canvas.update_plot(list(self.node.angular_error_data))
-            self.angular_output_canvas.update_plot(list(self.node.angular_output_data))
-            # self.data1_canvas.update_plot(list(self.node.data1), True)
-            # self.data2_canvas.update_plot(list(self.node.data2), True)
+            # self.angular_error_canvas.update_plot(list(self.node.angular_error_data))
+            # self.angular_output_canvas.update_plot(list(self.node.angular_output_data))
+            self.data1_canvas.update_plot(list(self.node.data1), True)
+            self.data2_canvas.update_plot(list(self.node.data2), True)
             # self.data3_canvas.update_plot(list(self.node.data3), True)
             # self.data4_canvas.update_plot(list(self.node.data4), True)
-            time.sleep(0.01)
+            time.sleep(0.005)
 
     def closeEvent(self, event):
         # 在窗口关闭时，安全地停止线程和 ROS2 节点
@@ -856,7 +812,11 @@ class ControlGUI(QWidget):
 
 def main(args=None):
     rclpy.init(args=args)
-    motor_node = ModorNode("/dev/motor", 115200)
+    motor_node = ModorNode("/dev/motor", 512000)
+    motor_node.motor_run = True
+    motor_node.calibration_complete = True
+    motor_node.motor_send_cmd(f'w axis0.requested_state {AxisState.CLOSED_LOOP_CONTROL}')
+    motor_node.motor_send_cmd(f'w axis1.requested_state {AxisState.CLOSED_LOOP_CONTROL}')
 
     # 运行 ROS2 节点
     try:
@@ -865,9 +825,10 @@ def main(args=None):
         pass
     # 停止 ROS2 节点
     finally:
+        motor_node.pid_thread_runing = False
         motor_node.motor_idle()
-        motor_node.motor.close()
         motor_node.destroy_node()
+        motor_node.motor.close()
         rclpy.shutdown()
 
 # if __name__ == '__main__':

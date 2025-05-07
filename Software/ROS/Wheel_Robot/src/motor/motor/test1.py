@@ -429,7 +429,7 @@ class ModorNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    motor_node = ModorNode("/dev/motor", 115200)
+    motor_node = ModorNode("/dev/motor", 512000)
 
     # 运行 ROS2 节点
     try:
