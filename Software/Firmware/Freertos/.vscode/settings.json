@@ -106,6 +106,8 @@
         "stack_macros.h": "c",
         "spi.h": "c",
         "i2c.h": "c",
-        "stm32f4xx_hal_def.h": "c"
+        "stm32f4xx_hal_def.h": "c",
+        "freertos_vars.h": "c",
+        "usbd_ctlreq.h": "c"
     }
 }
